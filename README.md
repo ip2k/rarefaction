@@ -276,12 +276,14 @@ npx tsx scripts/try.ts --root fixtures/SampleTypeScript orient '{"symbol":"scale
 ```
 
 The fixtures under `fixtures/` are small synthetic projects, one per
-language. CI runs the suite with clangd and rust-analyzer installed. Pushing
-a `v*` tag that matches every version field (`package.json`, `server.json`,
-both plugin manifests) publishes to npm and the
+language. CI runs the suite with clangd and rust-analyzer installed. The
+Release workflow (a `v*` tag push, or "Run workflow" on `main`) checks that
+every version field agrees (`package.json`, `server.json`, both plugin
+manifests), publishes to npm and the
 [MCP Registry](https://registry.modelcontextprotocol.io) as
-`io.github.ip2k/rarefaction-lsp-mcp`. `docs/measurement.md` states the thresholds the project holds
-itself to; `docs/decisions.md` records why things are the way they are.
+`io.github.ip2k/rarefaction-lsp-mcp`, then creates the GitHub release. `docs/measurement.md`
+states the thresholds the project holds itself to; `docs/decisions.md`
+records why things are the way they are.
 
 ## Licence
 

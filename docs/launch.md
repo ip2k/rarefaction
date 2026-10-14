@@ -17,7 +17,8 @@ commit, so no earlier history is public. The original private repository
       once it exists (first publish: all packages, then narrow it).
 - [ ] GitHub → Settings → Secrets and variables → Actions → New repository
       secret `NPM_TOKEN`.
-- [ ] `git tag v0.2.0 && git push origin v0.2.0`, then watch the Release run.
+- [ ] Actions → Release → Run workflow on `main` (or push tag `v0.2.0`); it
+      publishes npm, the MCP Registry and the GitHub release.
 - [ ] Check: `npx -y rarefaction-lsp-mcp` starts (it waits on stdin; Ctrl-C),
       <https://www.npmjs.com/package/rarefaction-lsp-mcp> and
       <https://registry.modelcontextprotocol.io/v0/servers?search=rarefaction>.
@@ -45,7 +46,6 @@ About box carries the search terms.
       `impact-analysis`, `static-analysis`, `context-engineering`,
       `token-optimization`, `coding-agent`, `ai-agents`, `claude-code`,
       `codex`, `llm`, `developer-tools`, `typescript`.
-- [ ] Releases → Draft a new release from `v0.2.0`.
 
 ## 4. Directories
 
