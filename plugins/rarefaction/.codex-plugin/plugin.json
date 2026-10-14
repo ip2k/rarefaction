@@ -1,0 +1,46 @@
+{
+  "name": "rarefaction",
+  "version": "0.2.0",
+  "description": "Gives the agent an LSP call graph for one symbol before it reads files: signature, body, callers, callees, implementations, tests and impacted files in one call, to save tokens and context.",
+  "author": {
+    "name": "Sean (ip2k)",
+    "url": "https://github.com/ip2k"
+  },
+  "homepage": "https://github.com/ip2k/rarefaction#readme",
+  "repository": "https://github.com/ip2k/rarefaction",
+  "license": "GPL-3.0-or-later",
+  "keywords": [
+    "lsp",
+    "language-server-protocol",
+    "call-graph",
+    "call-hierarchy",
+    "code-intelligence",
+    "impact-analysis",
+    "token-usage",
+    "context-engineering",
+    "mcp",
+    "swift",
+    "rust",
+    "c",
+    "typescript",
+    "python",
+    "webassembly"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Rarefaction",
+    "shortDescription": "One symbol's call graph, tests and live files from the language server",
+    "longDescription": "Rarefaction composes language-server call hierarchy, references, implementations and type hierarchy into one bounded answer about a symbol: its signature and body, callers (with tests picked out), callees, the tests that reach it and the files that can matter. Profiles cover Swift, Rust, C/C++, TypeScript/JavaScript, Python and WebAssembly text.",
+    "developerName": "Sean (ip2k)",
+    "category": "Coding",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/ip2k/rarefaction",
+    "defaultPrompt": [
+      "Orient on the function I'm about to change and tell me which tests reach it.",
+      "Who calls this method, and which files would a change to it affect?"
+    ]
+  }
+}

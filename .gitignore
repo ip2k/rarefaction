@@ -1,0 +1,23 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Fixture build products (the integration test builds the sample package)
+fixtures/*/.build/
+fixtures/*/.swiftpm/
+
+# Never commit a project's build-server config from here
+buildServer.json
+
+# Synthetic Rust fixture build products
+fixtures/*/target/
+fixtures/*/Cargo.lock
+# Local language-server settings and analysis databases
+.rarefaction.json
+.clangd-analysis/
+
+# Serena indexes and session notes are local; keep only project configuration.
+.serena/*
+!.serena/project.yml
+__pycache__/

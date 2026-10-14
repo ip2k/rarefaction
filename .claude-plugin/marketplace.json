@@ -1,0 +1,15 @@
+{
+  "name": "rarefaction",
+  "description": "Rarefaction: LSP call graphs for AI coding agents",
+  "owner": {
+    "name": "Sean (ip2k)",
+    "url": "https://github.com/ip2k"
+  },
+  "plugins": [
+    {
+      "name": "rarefaction",
+      "source": "./plugins/rarefaction",
+      "description": "LSP call graph for one symbol: callers, callees, tests and impacted files in one call."
+    }
+  ]
+}

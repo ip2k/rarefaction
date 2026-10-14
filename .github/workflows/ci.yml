@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install native language servers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clangd
+          rustup component add rust-analyzer
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test

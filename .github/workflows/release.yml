@@ -1,0 +1,39 @@
+# Push a tag matching package.json's version (v0.2.0) to publish to npm and
+# then to the MCP Registry. Needs an NPM_TOKEN repository secret; the registry
+# login uses this workflow's GitHub OIDC token for the io.github.ip2k namespace.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Check the tag matches every version field
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for file in package.json server.json plugins/rarefaction/.claude-plugin/plugin.json plugins/rarefaction/.codex-plugin/plugin.json; do
+            test "$(jq -r .version "$file")" = "$tag" || { echo "$file version does not match tag $GITHUB_REF_NAME"; exit 1; }
+          done
+          test "$(jq -r '.packages[0].version' server.json)" = "$tag"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to the MCP Registry
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

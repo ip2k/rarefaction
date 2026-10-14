@@ -1,0 +1,132 @@
+# Decisions
+
+Dated, so a later session can tell which facts were true when.
+
+## 2026-09-11 — why this exists, and why not the alternatives
+
+The idea comes from evaluating [Girder](https://github.com/dhishwasher/Girder):
+give the agent a semantic slice, not whole files. Girder was rejected for our
+use (no Swift; BSL; four-day-old repo) but the idea was right. The survey of
+what already exists:
+
+| tool | what it gives | why it is not this |
+|---|---|---|
+| Claude Code's native `LSP` tool (via `swift-lsp` plugin) | every LSP primitive, model-callable, any language with a plugin | primitives only; a 40-request walk cannot go through the model one call at a time |
+| Serena | primitives + symbol-level editing, 40 languages, MIT | no call hierarchy, no bundle, no scope; 15 s startup |
+| Swift-Selena, swift-mcp-server | SwiftSyntax-based | disable LSP on `.xcodeproj`; no cross-file semantics |
+
+So this is **composition only**: `orient`, later `scope` and `impacted_tests`.
+The primitives are Anthropic's problem now.
+
+## 2026-09-11 — TypeScript now, Rust only on evidence
+
+Sean's words: "TypeScript now while we explore and potentially a Rust port
+later once we verify where the actual value is and IF and ONLY IF it's a very
+large performance improvement." The walk is 77 ms for 39 requests; the
+language server dominates. TypeScript has the most mature MCP SDK
+(`@modelcontextprotocol/server` v2), typed LSP for free
+(`vscode-languageserver-protocol`), and runs wherever a project lives.
+
+## 2026-09-11 — language-agnostic core, per-language profiles
+
+LSP is the abstraction; the core speaks nothing else. A profile is: launch
+command, workspace prerequisite, freshness model (`on-build` vs `on-open`),
+test recognition, test-runner hint, external-path filter, and later the
+"fuzzy edge" extractors for string-keyed coupling the index cannot see. The
+deepest per-language difference is the freshness model, not the syntax.
+
+Known capability gaps to design for: pyright has no call hierarchy (synthesise
+from references + enclosing `documentSymbol`, as Serena does); tsserver has no
+type hierarchy; Go interfaces are satisfied implicitly (walk through
+`implementation`).
+
+## 2026-09-11 — what sourcekit-lsp actually does, measured
+
+- Cross-file `incomingCalls` works on an `.xcodeproj` via `xcode-build-server`.
+  Cold start 0.6–9 s, then 1–8 ms per request.
+- `outgoingCalls` lists a callee once per call site and includes SDK symbols
+  with `../../../../Applications/Xcode-beta.app/…` paths → dedupe, drop, count.
+- `workspace/symbol "Scorer"` returns 940 results / 336 KB → exact-match
+  filter, dedupe, and an ambiguity error with positions instead of a list.
+- The call-hierarchy item's `range` is the signature line only;
+  `documentSymbol.range` is the whole declaration → body comes from there.
+- SwiftPM packages index in the background after `initialize`; `workspace/
+  symbol` is empty until `$/progress` goes quiet → the client waits once.
+- Claude Code roots its own sourcekit-lsp at the session cwd; from another
+  cwd it runs in fallback mode ("Cannot find 'X' in scope" for same-module
+  types). Open sessions in the project root.
+
+## 2026-09-11 — names and packaging
+
+`rarefaction-lsp-mcp` (Sean's choice). npm name is free, unscoped. Tools are
+named plainly (`orient`, `status`) because Claude Code already namespaces them
+by server (`mcp__rarefaction__orient`).
+
+## Upstream candidates
+
+Per the house rule, kept here and raised proactively; nothing posted without
+Sean's sign-off, drafted under the `oss-contributions` skill.
+
+- **Serena: call hierarchy.** Generic LSP, would help all 40 of its languages.
+  Draft after phase-1 numbers exist so the PR carries evidence.
+- **Claude Code `swift-lsp` plugin / docs:** the plugins reference says LSP is
+  passive; the `LSP` tool is model-callable in 2.1.260. And the plugin gives
+  no hint that `.xcodeproj` needs `buildServer.json`. A docs issue, low effort.
+
+## 2026-10-07 — polyglot profiles and Codex
+
+Retain the TypeScript implementation and add source-language profiles for
+Rust, clangd C/C++, TypeScript/JavaScript, Pyright Python, and WAT. Mixed
+repositories route by profile or source position; optional local configuration
+supplies nested roots and target settings. Language knowledge remains in the
+profiles. Capability-probe the installed server instead of assuming older
+Pyright limitations; its installed v1.1.414 provides call hierarchy. Reference
+fallback is tested separately without claiming references are call edges.
+
+Keep JieLi firmware build flags and clangd analysis flags separate. pi32v2 is
+not a standard clangd or Rust backend. The database-preparation helper requires
+an explicit approximation, remaps container paths and canonicalizes symlinks;
+otherwise clangd can fail to enumerate a database under a different directory
+spelling, or project filtering can drop valid callers. Collapse connected
+header/body declarations only for the C/C++ profile; doing so generically
+would incorrectly collapse Swift protocol conformers.
+
+Saved edits synchronize open documents and changed source files; no lifetime
+source-text cache. Bound orientation output with max_nodes (default 50), body
+lines and depth. The global Codex MCP registration remains workspace-relative,
+with absolute Node/entry paths and a PATH containing external server locations.
+No editor-LSP registration is needed: Rarefaction consumes LSP and serves MCP.
+
+## 2026-10-14 — GPL-3.0-or-later, public repository
+
+Sean relicensed the project from MIT to GPL-3.0-or-later and published it
+as a fresh public repository, `ip2k/rarefaction`, from one squashed commit;
+the private `ip2k/rarefaction-lsp-mcp` keeps the earlier history, which named
+private product symbols. The npm package and MCP Registry names keep
+`rarefaction-lsp-mcp`. Every bundled dependency is MIT or Apache-2.0, both
+compatible with GPLv3; external language servers are separate programs and
+are not bundled. Private product symbol names were removed from the README,
+tests and measurement notes; aggregate numbers are kept.
+
+## 2026-10-14 — distribution: npm, MCP Registry, Claude and Codex plugins
+
+To make adoption one command, the package is published to npm as
+`rarefaction-lsp-mcp` and to the official MCP Registry as
+`io.github.ip2k/rarefaction-lsp-mcp` (`server.json`, `mcpName`). A tag push
+runs `.github/workflows/release.yml`, which refuses a tag that disagrees with
+any version field. `plugins/rarefaction/` is one plugin directory serving both
+Claude Code (`.claude-plugin/`) and Codex (`.codex-plugin/`): the npx-launched
+server plus an `orient-first` skill carrying the orientation guidance. The
+repository is its own marketplace for both (`.claude-plugin/marketplace.json`,
+`.agents/plugins/marketplace.json`). It lives in a subdirectory so that
+sessions opened in this repository do not pick up a project `.mcp.json`.
+Both manifests were checked with the real CLIs (`claude plugin validate
+--strict`, `codex plugin add`) and `mcp-publisher validate`.
+
+CI installs clangd and rust-analyzer so the integration suite runs for real.
+That exposed clangd 18 rejecting `callHierarchy/outgoingCalls` with
+MethodNotFound although it advertises call hierarchy; `orient` crashed. The
+client now treats MethodNotFound on hierarchy follow-up requests as "not
+implemented", omits those results and says so in `warnings`. The polyglot
+tests also skip a native server that is present but does not start (a rustup
+proxy without the rust-analyzer component).

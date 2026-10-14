@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rarefaction": {
+      "command": "npx",
+      "args": ["-y", "rarefaction-lsp-mcp"]
+    }
+  }
+}

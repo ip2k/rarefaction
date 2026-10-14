@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ip2k/rarefaction-lsp-mcp",
+  "title": "Rarefaction",
+  "description": "LSP call graph for coding agents: a symbol's callers, callees, tests and live files in one call.",
+  "version": "0.2.0",
+  "websiteUrl": "https://github.com/ip2k/rarefaction#readme",
+  "repository": {
+    "url": "https://github.com/ip2k/rarefaction",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "rarefaction-lsp-mcp",
+      "version": "0.2.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

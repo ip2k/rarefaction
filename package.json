@@ -1,0 +1,75 @@
+{
+  "name": "rarefaction-lsp-mcp",
+  "version": "0.2.0",
+  "description": "MCP server that gives AI coding agents an LSP call graph for one symbol: callers, callees, implementations, tests and impacted files in one call, instead of reading whole files.",
+  "mcpName": "io.github.ip2k/rarefaction-lsp-mcp",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "lsp",
+    "language-server-protocol",
+    "language-server",
+    "call-graph",
+    "call-hierarchy",
+    "code-intelligence",
+    "code-navigation",
+    "impact-analysis",
+    "static-analysis",
+    "context-engineering",
+    "token-usage",
+    "coding-agent",
+    "ai-agent",
+    "claude-code",
+    "claude-code-plugin",
+    "codex",
+    "codex-plugin"
+  ],
+  "author": "Sean (ip2k)",
+  "homepage": "https://github.com/ip2k/rarefaction#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ip2k/rarefaction.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ip2k/rarefaction/issues"
+  },
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "rarefaction-lsp-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs",
+    "tools/prepare_clangd.py"
+  ],
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build && npm run test:unit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "pyright": "^1.1.414",
+    "typescript": "^5.9.3",
+    "typescript-language-server": "^6.0.1",
+    "vscode-languageserver-protocol": "^3.18.3",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@types/node": "^22",
+    "tsx": "^4",
+    "vitest": "^5.0.3"
+  }
+}
