@@ -41,6 +41,10 @@
     "defaultPrompt": [
       "Orient on the function I'm about to change and tell me which tests reach it.",
       "Who calls this method, and which files would a change to it affect?"
-    ]
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "privacyPolicyURL": "https://github.com/ip2k/rarefaction#privacy",
+    "brandColor": "#3e8fb0"
   }
 }

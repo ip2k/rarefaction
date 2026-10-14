@@ -277,6 +277,15 @@ symbol navigation, diagnostics and semantic edits. [docs/serena.md](docs/serena.
 covers a pinned installation, a WAT adapter, project language settings,
 limitations and verification.
 
+## Privacy
+
+Rarefaction runs entirely on your machine. It reads your project's files
+and talks to language servers over local stdio; it makes no network
+requests and collects no telemetry. The language servers it launches
+behave as they do in your editor (for example, rust-analyzer runs
+`cargo metadata`, which may fetch crate indexes). `npx` downloads the
+package from npm on first use.
+
 ## Development
 
 ```bash
