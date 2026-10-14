@@ -13,8 +13,11 @@ commit, so no earlier history is public. The original private repository
 ## 2. First release (npm + MCP Registry)
 
 - [ ] On npmjs.com: account with 2FA, then Access Tokens → Generate New Token
-      → Granular, read/write on packages, scoped to `rarefaction-lsp-mcp`
-      once it exists (first publish: all packages, then narrow it).
+      → Granular, read/write on packages, **with "Bypass two-factor
+      authentication" ticked** (otherwise CI fails with `EOTP`), scoped to
+      `rarefaction-lsp-mcp` once it exists (first publish: all packages, then
+      narrow it). Alternative: publish once locally with `npm publish --otp`,
+      then set up npm trusted publishing for this workflow and drop the token.
 - [ ] GitHub → Settings → Secrets and variables → Actions → New repository
       secret `NPM_TOKEN`.
 - [ ] Actions → Release → Run workflow on `main` (or push tag `v0.2.0`); it
