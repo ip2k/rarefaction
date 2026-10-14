@@ -51,6 +51,43 @@ live set, and whether the expansion was a graph miss or a "fuzzy edge" miss
 live sets of 8/165 files (that scoring method, up 2) and 26/165
 (a location-update method, up 3) in 77–113 ms; recall was not measured.
 
+### Offline protocol and thresholds, stated 2026-10-14 before any measurement
+
+`scope` is not built yet, but the set it would enforce is `orient`'s live
+set, so scope recall can be measured offline against real history:
+
+- **Corpus.** Per project, the most recent non-merge commits (up to 25)
+  that change between 2 and 15 source files in the profile's language
+  (tests count; lockfiles, generated files, renames and docs do not), and
+  whose first changed hunk falls inside a function or method at the parent
+  commit.
+- **Seed.** That enclosing function or method, found with
+  `textDocument/documentSymbol` at the parent commit: the edit an agent
+  would start from.
+- **Live set.** `orient` on the seed at the parent commit with the default
+  bounds (up 2, down 1, 50 nodes per direction).
+- **Scope recall** per commit = changed source files inside the live set ÷
+  changed source files. A miss is a changed file outside it.
+- **Live fraction** = live files ÷ project source files.
+- **Bytes.** `orient` text + structured content ÷ the bytes of reading
+  every live file once, and ÷ the bytes of every changed file.
+- **Time.** `orient` wall time after the language server has indexed
+  (cold start reported separately).
+
+Thresholds:
+
+- median scope recall ≥ **0.80** across the corpus, per language
+- median live fraction ≤ **0.10**
+- median `orient` bytes ≤ **0.25×** reading the live files once
+- p90 warm `orient` time ≤ **5 s**
+- every miss gets a root cause: dynamic dispatch, macro or generated code,
+  string/config coupling, same-change co-edit with no graph edge (for
+  example a new call added in the same commit), index gap, or tool bug
+
+What this does not measure: whether an agent working under a `scope` hook
+finishes the task, or token use in a real session; those need the phase-1
+agent protocol.
+
 ## Results
 
 _None yet._
