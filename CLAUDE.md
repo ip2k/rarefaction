@@ -116,5 +116,7 @@ GPL-3.0-or-later; public repository. Published to npm (Trusted Publishing,
 no tokens) and the MCP Registry by running `.github/workflows/release.yml`
 (Run workflow on main, or a `v*` tag); every version field must match. `plugins/rarefaction/` is the Claude Code and Codex plugin (npx server
 plus `orient-first` skill); this repository is its marketplace for both. Keep
-plugin, server.json and package versions in step. `docs/launch.md` is the
+plugin, server.json and package versions in step with
+`scripts/bump-version.mjs`; `.github/workflows/maintenance.yml` merges
+Dependabot updates and cuts a patch release monthly. `docs/launch.md` is the
 remaining manual checklist. See `docs/decisions.md`.

@@ -19,12 +19,19 @@ MCP Registry entry and the GitHub release. npm now trusts
 and the package requires 2FA and disallows tokens; no npm token exists.
 0.2.1 is the first release published by the workflow through OIDC.
 
-To release: bump the version in `package.json` (`npm version X.Y.Z
---no-git-tag-version`, which also updates the lockfile), `server.json`
-(twice) and both `plugins/rarefaction/.*-plugin/plugin.json`, push to
-`main`, then Actions → Release → Run workflow (or push tag `vX.Y.Z`). The
-workflow refuses mismatched versions and skips npm if the version is
-already there.
+To release by hand: `node scripts/bump-version.mjs patch` (or an explicit
+`X.Y.Z`; it updates `package.json`, the lockfile, `server.json` and both
+plugin manifests), push to `main`, then Actions → Release → Run workflow
+(or push tag `vX.Y.Z`). The workflow refuses mismatched versions and skips
+npm if the version is already there.
+
+Monthly, without anyone: Dependabot opens grouped npm and GitHub Actions
+updates on the 1st; on the 8th the Maintenance workflow merges the green
+ones (npm major updates stay open for review), runs the full test suite and
+`npm audit`, and, if anything shipped changed since the last release, bumps
+the patch version and starts the Release workflow. CI also runs `npm audit`,
+`npm pack --dry-run` and dependency review on pull requests; CodeQL runs on
+pushes, pull requests and weekly.
 
 Checks after a release: `npx -y rarefaction-lsp-mcp`,
 <https://www.npmjs.com/package/rarefaction-lsp-mcp>,

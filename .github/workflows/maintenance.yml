@@ -1,0 +1,82 @@
+# Monthly upkeep, a week after Dependabot opens its monthly PRs:
+#  1. merge the Dependabot PRs whose checks are green (grouped npm minor and
+#     patch updates, and GitHub Actions updates); npm major updates stay open
+#     for a person to review
+#  2. run the full test suite and the security audit on the result
+#  3. if anything shipped has changed since the last release, bump the patch
+#     version everywhere and start the Release workflow, which publishes to
+#     npm (Trusted Publishing), the MCP Registry and GitHub Releases
+name: Maintenance
+
+on:
+  schedule:
+    - cron: "23 7 8 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: read
+
+concurrency:
+  group: maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Merge green Dependabot PRs
+        run: |
+          gh pr list --author app/dependabot --state open --json number,headRefName \
+            --jq '.[] | "\(.number) \(.headRefName)"' | while read -r number ref; do
+            case "$ref" in
+              dependabot/github_actions/*|dependabot/npm_and_yarn/npm-*) ;;
+              *) echo "#$number ($ref) is not a grouped minor/patch update; left for review"; continue ;;
+            esac
+            if gh pr checks "$number" >/dev/null 2>&1; then
+              gh pr merge "$number" --squash --delete-branch || echo "#$number could not be merged (conflict?); Dependabot will rebase it"
+            else
+              echo "#$number has failing or pending checks; left open"
+            fi
+          done
+
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install native language servers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clangd
+          rustup component add rust-analyzer
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Release if anything shipped changed
+        run: |
+          last="v$(jq -r .version package.json)"
+          if ! git rev-parse -q --verify "refs/tags/$last" >/dev/null; then
+            echo "$last is not tagged yet; nothing to compare against"; exit 0
+          fi
+          if git diff --quiet "$last" HEAD -- package.json package-lock.json src plugins server.json tools/prepare_clangd.py; then
+            echo "Nothing shipped changed since $last"; exit 0
+          fi
+          next="$(node scripts/bump-version.mjs patch)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release $next: monthly dependency update"
+          git push origin HEAD:main
+          gh workflow run release.yml --ref main
+          echo "Started the Release workflow for $next"
