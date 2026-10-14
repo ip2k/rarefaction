@@ -87,6 +87,30 @@ function enclosing(symbols: DocumentSymbol[] | SymbolInformation[] | null, line:
 const bytes = (rel: string) => { try { return statSync(join(repo, rel)).size; } catch { return 0; } };
 const outputBytes = (o: OrientOutputType) => Buffer.byteLength(renderOrient(o)) + Buffer.byteLength(JSON.stringify(o));
 
+// For root-causing misses: run orient on the same function at the commit
+// itself. A missed file that is live there was connected by the commit.
+async function reachedAtCommit(c: Candidate, name: string, missed: string[]): Promise<string[] | null> {
+  git("checkout", "-q", "--detach", "-f", c.sha);
+  const session = new Session(root, profile);
+  try {
+    const client = await session.lsp();
+    const symbols = await client.documentSymbols(await client.open(join(repo, c.seedFile)));
+    const found: DocumentSymbol[] = [];
+    const walk = (list: DocumentSymbol[]) => { for (const s of list) { if (s.name === name && FUNCTION_KINDS.has(s.kind)) found.push(s); if (s.children) walk(s.children); } };
+    if (symbols && symbols.length && "range" in symbols[0]) walk(symbols as DocumentSymbol[]);
+    const s = found.sort((a, b) => Math.abs(a.range.start.line - c.seedLine) - Math.abs(b.range.start.line - c.seedLine))[0];
+    if (!s) return null;
+    const pos = s.selectionRange.start;
+    const result = await orient(session, { symbol: `${relative(root, join(repo, c.seedFile))}:${pos.line + 1}:${pos.character + 1}`, up: 2, down: 1, max_nodes: 50, include_body: false, max_body_lines: 0 });
+    const live = new Set(result.live_files.map((f) => relative(repo, join(root, f))));
+    return missed.filter((f) => live.has(f));
+  } catch {
+    return null;
+  } finally {
+    await session.close();
+  }
+}
+
 async function measure(c: Candidate) {
   git("checkout", "-q", "--detach", "-f", c.parent);
   const session = new Session(root, profile);
@@ -109,10 +133,12 @@ async function measure(c: Candidate) {
     const liveBytes = [...live].reduce((n, f) => n + bytes(f), 0);
     const changedBytes = c.modified.reduce((n, f) => n + bytes(f), 0);
     const ob = outputBytes(result);
+    const missed = c.modified.filter((f) => !live.has(f));
+    const reachedAfter = missed.length ? await reachedAtCommit(c, seed.name, missed) : [];
     return {
       sha: c.sha.slice(0, 10), seed: `${seed.name} @ ${c.seedFile}:${pos.line + 1}`,
       changed: c.modified.length, added: c.added.length, hits: hits.length, recall: hits.length / c.modified.length,
-      missed: c.modified.filter((f) => !live.has(f)),
+      missed, missed_reached_after_commit: reachedAfter,
       live: live.size, project_files: result.project_source_files, live_fraction: live.size / result.project_source_files,
       orient_bytes: ob, live_bytes: liveBytes, changed_bytes: changedBytes,
       bytes_vs_live: liveBytes ? ob / liveBytes : null, bytes_vs_changed: changedBytes ? ob / changedBytes : null,
