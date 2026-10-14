@@ -1,15 +1,15 @@
 # Serena alongside Rarefaction
 
-This workstation uses both MCPs in Claude Code and Codex. Rarefaction supplies
-bounded orientation (callers/callees/tests); Serena supplies targeted symbol
-navigation, diagnostics and semantic edits. Both account instruction files
-require their use during substantive work, with project/root checks and normal
-edit authorization. Small local edits can still use the clients' native tools.
+Rarefaction and [Serena](https://github.com/oraios/serena) work well side by
+side in Claude Code and Codex. Rarefaction supplies bounded orientation
+(callers, callees, tests, live files); Serena supplies targeted symbol
+navigation, diagnostics and semantic edits. This page describes a setup that
+adds WebAssembly text (WAT) to Serena so both cover the same six languages.
+It is optional: Rarefaction does not need Serena.
 
 ## Installed revision and launcher
 
-Serena is installed as a uv tool under `~/.local/share/uv/tools/serena-agent`.
-The published 1.7.0 release lacks the external-adapter registration API. WAT
+Install Serena as a uv tool. The published 1.7.0 release lacks the external-adapter registration API. WAT
 requires the pinned upstream revision below, currently `2.0.0.dev0`:
 
 ```bash
@@ -24,12 +24,13 @@ No Serena installation files are patched. The launcher honors Claude's
 `CLAUDE_PROJECT_DIR`; otherwise Serena uses `--project-from-cwd`. Always check
 activation in Codex desktop, and explicitly activate the actual project if needed.
 
-Both registrations use the uv environment's absolute Python executable, this
-clone's absolute launcher path, a PATH containing native language servers,
-`start-mcp-server --project-from-cwd`, and their respective `codex` or
-`claude-code` context. Modes disable onboarding/memory workflows; account rules
-also prohibit incidental memory writes. No hooks are installed. Browser/dashboard
-auto-start is disabled. Codex startup/tool timeouts are 120/180 seconds.
+Register it in each client with the uv environment's absolute Python
+executable, the absolute path to `tools/serena_launcher.py` in a clone of this
+repository, a PATH containing your native language servers,
+`start-mcp-server --project-from-cwd`, and the `codex` or `claude-code`
+context. Disabling Serena's onboarding/memory modes and dashboard auto-start
+keeps it quiet; in Codex, startup and tool timeouts of 120/180 seconds leave
+room for indexing.
 
 ## Project languages
 
@@ -48,9 +49,9 @@ language_servers:
 
 Do not enable every server for every project. C/C++ use `cpp`; TS/JS/TSX/JSX
 use `typescript`. Native Swift, Rust, C/C++, TS and Python use Serena's own
-adapters. The local global config reuses `/usr/bin/clangd`. Other adapters
+adapters. Serena's global config can point at an existing clangd. Other adapters
 manage their dependencies according to Serena's installed implementation.
-Our WAT adapter is registered with normal auto-detection priority.
+The WAT adapter is registered with normal auto-detection priority.
 
 Rust/C Wasm projects use the original source language and real target/build
 configuration. WAT is a separate text format; `.wasm` binaries need disassembly.
@@ -73,13 +74,9 @@ fixture. It checks symbol bodies/references and a TypeScript cross-file rename,
 then removes the copies. It does not invoke a model or modify real projects.
 Native language-server availability and the pinned Serena installation are
 prerequisites. Restart/reconnect existing client sessions after configuration
-changes. Preserve this pin until a newer revision passes the verifier; do not
-blindly upgrade the dev installation or point the MCP at the unwrapped CLI,
-which would omit WAT registration.
-
-Configuration backups are beside the modified account files, suffixed
-`-serena`. Account-wide means local user scope on this workstation, not hosted
-Claude/Codex cloud sessions or another machine. Those need separate setup.
+changes. Keep this pin until a newer revision passes the verifier, and point
+the client at the launcher rather than Serena's own CLI, which would omit WAT
+registration.
 
 Sources: [installation](https://oraios.github.io/serena/02-usage/010_installation.html),
 [client configuration](https://oraios.github.io/serena/02-usage/030_clients.html),
@@ -90,6 +87,6 @@ Python and WAT all completed diagnostics queries and returned symbol bodies
 and cross-file/in-file references as
 appropriate. TypeScript cross-file rename was verified and reverted in its
 copy. Both Codex and Claude Code contexts returned TypeScript symbols/references;
-Claude's user registration also passed its connection health check. No model
+a Claude Code user registration also passed its connection health check. No model
 turn was required. Swift temporary paths were canonicalized before build/index
 creation to avoid macOS `/var` versus `/private/var` mismatches.

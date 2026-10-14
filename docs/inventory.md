@@ -35,31 +35,22 @@ project ever changes hands.
 Girder (BSL 1.1) informed the design and is cited in `docs/decisions.md`; no
 code from it is used.
 
-## Local Codex integration (2026-10-07)
+## Client integration (2026-10-07)
 
-The user-level MCP registration and usage guidance are personal workstation
-configuration in `~/.codex/config.toml` and `~/.codex/AGENTS.md`. No new account,
-API key or hosted service was introduced. Language servers run on local source
-files; no FM1 vendor toolchain/SDK or firmware code was copied into this repo.
-The synthetic fixtures are authored here. Heavy actual builds stay on the LAN.
-
-## Local Claude Code integration (2026-10-07)
-
-User-scoped `~/.claude.json` launches this clone with absolute Node/server paths
-and an external-language-server PATH. `~/.claude/CLAUDE.md` contains orientation
-guidance for all profiles; user settings permit only the two read-only Rarefaction
-tools. No new account, API key, plugin or hook was introduced. Configuration and
-instructions have local timestamped backups. These settings cover local Claude
-Code sessions; hosted cloud sessions require their own installation and setup.
+Registering Rarefaction in Claude Code or Codex is per-user configuration on
+each machine; nothing about it lives in this repository except the plugin
+and the README instructions. No account, API key or hosted service is
+involved. Language servers run on local source files. The fixtures are
+synthetic and authored here; no vendor toolchain, SDK or firmware code is
+in the repository.
 
 ## Serena integration (2026-10-08)
 
-Serena is external workstation tooling installed via uv at upstream revision
+Serena is optional external tooling, installed via uv at upstream revision
 `3b99f8b024dafd58c962ea6e74f37c8a730ef532` (`2.0.0.dev0`). SolidLSP is MIT;
 the Serena application is GPL-3.0-or-later. See its authoritative component
 [license overview](https://github.com/oraios/serena/blob/3b99f8b024dafd58c962ea6e74f37c8a730ef532/LICENSE).
 The independent WAT launcher/adapter here contains no copied Serena application
 code. No Serena code is bundled in the npm package. No paid JetBrains plugin,
-new account/key, vendor SDK, cloud service, or hook was introduced. Account
-registrations/instructions are backed up beside the modified files. See
+new account/key, vendor SDK, cloud service, or hook is involved. See
 [serena.md](serena.md) for installation, language IDs and verification.

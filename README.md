@@ -59,16 +59,18 @@ npm test -- "engine.test.ts"
 _11 LSP requests, 6430 ms (includes language-server cold start); index on-open_
 ````
 
-The walk itself takes tens of milliseconds; the language server's cold start
-is paid once per session.
+Once the language server has indexed, a call takes a fraction of a second
+(median 80 ms on ripgrep, 220 ms on the 800-file IronRDP workspace); the
+server's cold start, 6–16 s on those projects, is paid once per session.
 
 ## What it helps with
 
 - **Reducing token usage in AI coding agents.** One bounded answer replaces
-  several whole-file reads and searches. In a measured spot check the answer
-  was 3.4% of the bytes of reading its live files once; the broader
-  task-level measurement is still to be done (see
-  [docs/measurement.md](docs/measurement.md)).
+  several whole-file reads and searches. Measured on 50 real commits in
+  ripgrep and IronRDP, the answer was a median 6–7% of the bytes of reading
+  the files it names once. How much that saves in a whole agent session is
+  not measured yet; see [docs/measurement.md](docs/measurement.md), including
+  where the live set falls short.
 - **Call graph and impact analysis.** "What calls this function, and what
   would break if I change it?" By default two levels of callers and one of
   callees, plus implementations and type hierarchy, each bounded and marked when truncated.
@@ -102,7 +104,8 @@ How it relates to nearby tools:
 
 ## Install
 
-Requires Node 22.22.2 or later. The TypeScript and Python language servers
+Requires Node 22.22.2 or later; used on macOS and Linux (CI runs on Ubuntu),
+untested on Windows. The TypeScript and Python language servers
 are bundled. Install the others you need and put them on the `PATH` your
 client launches with — see [Languages and configuration](#languages-and-configuration).
 Swift needs macOS with Xcode (or a Swift toolchain with sourcekit-lsp).
@@ -209,14 +212,17 @@ projects still need a new build to refresh their cross-file index.
 
 Planned: `scope` (the live set as an enforceable working set — tree-shaking
 for a task) and `impacted_tests` (the upward walk restricted to tests, as a
-runnable selection).
+runnable selection). The live set is not yet a safe boundary for edits: on
+real commits it contained a median half of the other files the change
+touched ([measurement](docs/measurement.md#results)), so `scope` waits on
+widening it beyond call edges.
 
 ## Languages and configuration
 
 | Profile | Language server | Prerequisites / scope |
 |---|---|---|
 | `swift` | sourcekit-lsp | Xcode or a Swift toolchain; SwiftPM, or Xcode with a build-server config |
-| `rust` | rust-analyzer | Cargo.toml or rust-project.json; embedded/no_std/Wasm target settings supported |
+| `rust` | rust-analyzer | Cargo.toml or rust-project.json; embedded/no_std/Wasm target settings supported; a project that pins a toolchain needs `rustup component add rust-analyzer --toolchain <channel>` (`status` says so) |
 | `c` | clangd | C/C++; compile_commands.json or compile_flags.txt for accurate include paths and defines |
 | `typescript` | typescript-language-server | TypeScript/JavaScript, TSX/JSX; server and TypeScript bundled as dependencies |
 | `python` | Pyright | Python and stubs; bundled; configure interpreter/import paths for your environment |

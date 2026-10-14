@@ -13,7 +13,7 @@ their own command export/capture. A local `compile_flags.txt` is useful for a
 small project, but does not enumerate translation units for background indexing.
 No compiler is executed by the database-preparation tool.
 
-A database captured in a LAN container needs its source, SDK and sysroot paths
+A database captured in a build container or on another machine needs its source, SDK and sysroot paths
 mapped to matching local files. Remapping a path does not fetch the headers.
 Keep vendor material in its existing private/ignored location. Example:
 

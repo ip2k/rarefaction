@@ -38,23 +38,12 @@ Checks after a release: `npx -y rarefaction-lsp-mcp`,
 <https://registry.modelcontextprotocol.io/v0/servers?search=rarefaction>,
 `claude plugin install rarefaction --marketplace ip2k/rarefaction`.
 
-## 3. Repository presentation
+## 3. Repository presentation — done 2026-10-14
 
-GitHub's default repository search matches only the name, description and
-topics; README text needs `in:readme` (and matters for web search). So the
-About box carries the search terms.
-
-- [ ] About → description (≈200 chars):
-      "MCP server: LSP call graph for AI coding agents. One symbol's callers,
-      callees, tests and impacted files in one call instead of reading whole
-      files, saving tokens. Claude Code & Codex plugin."
-- [ ] About → website: the npm page.
-- [ ] About → topics (GitHub allows 20): `mcp`, `mcp-server`,
-      `model-context-protocol`, `lsp`, `language-server-protocol`,
-      `call-graph`, `call-hierarchy`, `code-intelligence`, `code-navigation`,
-      `impact-analysis`, `static-analysis`, `context-engineering`,
-      `token-optimization`, `coding-agent`, `ai-agents`, `claude-code`,
-      `codex`, `llm`, `developer-tools`, `typescript`.
+About description, website and topics are set; GitHub's default repository
+search matches only the name, description and topics, so keep the search
+terms there. The README carries the logo, two diagrams and the install
+paths. Releases come from the Release workflow.
 
 ## 4. Directories
 
@@ -63,10 +52,13 @@ Everything posted publicly goes through Sean first (CLAUDE.md rule).
 | where | how | notes |
 |---|---|---|
 | Anthropic directory (claude.ai, Cowork, Claude Code) | <https://claude.ai/directory/manage>, paid plan | run `claude plugin validate --strict plugins/rarefaction` and the [pre-submission checklist](https://claude.com/docs/plugins/pre-submission-checklist) first; the portal may ask for support/privacy URLs (`supportUrl`, `privacyPolicyUrl` in the Claude manifest) |
-| Codex plugin directory | curated by OpenAI; no public submission path confirmed 2026-10-14 | the GitHub marketplace works today |
+| ChatGPT and Codex plugin directory (one shared catalog) | OpenAI Platform plugin submission ("Submit plugins" in the OpenAI developer docs) | review covers permissions, MCP checks and test cases; a local stdio server may only qualify as "Desktop only", if at all. The repo marketplace works today: `codex plugin marketplace add ip2k/rarefaction` |
 | MCP Registry | automatic from the release workflow | aggregators below read it |
 | awesome-mcp-servers (`punkpeye/awesome-mcp-servers`) | PR adding one line under developer tools | follow its CONTRIBUTING format |
-| mcp.so, Smithery, Glama, PulseMCP | submission forms; several ingest GitHub or the registry on their own | check for an existing auto-listing before submitting |
+| Glama | indexes public GitHub MCP servers on its own | claim the listing with a root `glama.json` naming `ip2k` as maintainer |
+| mcp.so | Submit button, or an issue on its GitHub | local / stdio; install `npx -y rarefaction-lsp-mcp` |
+| PulseMCP | Submit button | often imported from the MCP Registry; search first |
+| Cline MCP Marketplace | issue on `cline/mcp-marketplace` | needs the 400×400 icon: `docs/images/icon-400.png` |
 
 One-line description for listings:
 
@@ -77,6 +69,8 @@ One-line description for listings:
 
 ## 5. Evidence
 
-The strongest pitch is the phase-1 measurement in `docs/measurement.md`, run
-on public open-source projects so the task list can be published. Until then,
-listings claim only what is measured.
+Listings claim only what `docs/measurement.md` records. As of 2026-10-14
+that is the phase-2 offline benchmark on ripgrep and IronRDP: `orient`'s
+answer is a small fraction of the bytes of the files it names, and it is
+fast once the language server has indexed; scope recall missed its
+threshold. Phase 1 (agent sessions) is still to be run.
