@@ -104,9 +104,9 @@ Project .serena metadata/indexes are ignored except project.yml. No hooks added.
 
 ## 2026-10-14 — public release and distribution
 
-GPL-3.0-or-later; public repository. Published to npm and the MCP Registry by
-pushing a `v*` tag (`.github/workflows/release.yml`); every version field must
-match. `plugins/rarefaction/` is the Claude Code and Codex plugin (npx server
+GPL-3.0-or-later; public repository. Published to npm (Trusted Publishing,
+no tokens) and the MCP Registry by running `.github/workflows/release.yml`
+(Run workflow on main, or a `v*` tag); every version field must match. `plugins/rarefaction/` is the Claude Code and Codex plugin (npx server
 plus `orient-first` skill); this repository is its marketplace for both. Keep
 plugin, server.json and package versions in step. `docs/launch.md` is the
 remaining manual checklist. See `docs/decisions.md`.

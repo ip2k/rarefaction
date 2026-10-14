@@ -1,5 +1,5 @@
 # Publishes to npm, then the MCP Registry, then creates the GitHub release.
-# Start it by pushing a tag matching package.json's version (v0.2.0), by
+# Start it by pushing a tag matching package.json's version (vX.Y.Z), by
 # publishing a GitHub release with that tag, or with "Run workflow" on main
 # (the tag comes from package.json). npm and the MCP Registry both log in with
 # this workflow's GitHub OIDC token: npm through Trusted Publishing (npm 11.5.1+,

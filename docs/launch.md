@@ -10,29 +10,26 @@ Published as a fresh public repository, `ip2k/rarefaction`, from one squashed
 commit, so no earlier history is public. The original private repository
 (`ip2k/rarefaction-lsp-mcp`) keeps the full history and is not published.
 
-## 2. First release (npm + MCP Registry)
+## 2. Releases — 0.2.0 done 2026-10-14
 
-- [ ] First publish by hand, from a clone of `ip2k/rarefaction` at the
-      release commit: `npm ci && npm publish --access public --otp <code>`.
-      npm's Trusted Publisher settings exist only once the package does.
-- [ ] npmjs.com → `rarefaction-lsp-mcp` → Settings → Trusted Publisher →
-      GitHub Actions: user `ip2k`, repository `rarefaction`, workflow
-      `release.yml`, no environment; allowed actions: tick `npm publish`.
-- [ ] Settings → Publishing access → "Require two-factor authentication and
-      disallow tokens". Revoke any automation tokens; delete any `NPM_TOKEN`
-      repository secret.
-- [ ] Actions → Release → Run workflow on `main` (or push tag `v0.2.0`); it
-      skips npm when the version is already there, then publishes the MCP
-      Registry entry and the GitHub release.
-- [ ] Check: `npx -y rarefaction-lsp-mcp` starts (it waits on stdin; Ctrl-C),
-      <https://www.npmjs.com/package/rarefaction-lsp-mcp> and
-      <https://registry.modelcontextprotocol.io/v0/servers?search=rarefaction>.
-- [ ] Install the plugin from GitHub in both clients and orient once:
-      `claude plugin install rarefaction --marketplace ip2k/rarefaction`;
-      `codex plugin marketplace add ip2k/rarefaction && codex plugin add rarefaction@rarefaction`.
+0.2.0 was published to npm by hand (the package had to exist before npm's
+Trusted Publisher could be configured), then the Release workflow added the
+MCP Registry entry and the GitHub release. npm now trusts
+`ip2k/rarefaction` / `release.yml` (no environment, `npm publish` allowed)
+and the package requires 2FA and disallows tokens; no npm token exists.
+0.2.1 is the first release published by the workflow through OIDC.
 
-Later releases: bump the version in `package.json`, `server.json` (twice),
-and both `plugins/rarefaction/.*-plugin/plugin.json`, then tag.
+To release: bump the version in `package.json` (`npm version X.Y.Z
+--no-git-tag-version`, which also updates the lockfile), `server.json`
+(twice) and both `plugins/rarefaction/.*-plugin/plugin.json`, push to
+`main`, then Actions → Release → Run workflow (or push tag `vX.Y.Z`). The
+workflow refuses mismatched versions and skips npm if the version is
+already there.
+
+Checks after a release: `npx -y rarefaction-lsp-mcp`,
+<https://www.npmjs.com/package/rarefaction-lsp-mcp>,
+<https://registry.modelcontextprotocol.io/v0/servers?search=rarefaction>,
+`claude plugin install rarefaction --marketplace ip2k/rarefaction`.
 
 ## 3. Repository presentation
 
