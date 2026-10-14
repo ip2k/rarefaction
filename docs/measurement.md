@@ -90,7 +90,66 @@ agent protocol.
 
 ## Results
 
-_None yet._
+### 2026-10-14 — phase 2, scope recall offline (ripgrep, IronRDP)
+
+Protocol and thresholds as stated above (commit `99ccaf8`, before any run).
+One clarification fixed before the first run: files the commit *adds* cannot
+be in a live set computed at the parent, so recall counts only files that
+existed there; added files are recorded separately. Harness:
+`scripts/measure-scope.ts`; root-cause pass: `scripts/diagnose-misses.ts`.
+rust-analyzer 1.94.1 (IronRDP's pinned toolchain) and stable, Linux, 4 cores.
+
+| | ripgrep | IronRDP |
+|---|---|---|
+| revision | `3fce3b5` (2026-08-04) | `7b976a6` (2026-10-13) |
+| Rust source files | 100 | ~810 |
+| commits scanned / qualifying / measured | 539 / 100 / 25 | 201 / 100 / 25 |
+| skipped: first hunk not in a function | 11 | 44 |
+| changed files per commit (median, p90) | 3, 4 | 3, 9 |
+
+| metric | threshold | ripgrep | IronRDP | verdict |
+|---|---|---|---|---|
+| median scope recall | ≥ 0.80 | **0.50** (pooled 0.45) | **0.50** (pooled 0.36) | **miss** |
+| commits with full recall | — | 4 / 25 | 5 / 25 | |
+| median live fraction | ≤ 0.10 | 0.03 (3 of 100 files) | 0.004 (3 of ~810) | pass |
+| median `orient` bytes ÷ reading the live files | ≤ 0.25× | 0.062× (7.7 KB vs 123 KB) | 0.074× (10.3 KB vs 138 KB) | pass |
+| median `orient` bytes ÷ reading the changed files | — | 0.070× | 0.103× | |
+| warm `orient` time, median / p90 | p90 ≤ 5 s | 80 ms / 177 ms | 219 ms / 434 ms | pass |
+| cold start incl. indexing, median | — | 5.7 s | 15.9 s | |
+
+**Scope recall is a miss.** The live set is small and cheap, but on real
+commits it contained only half of the other files the change touched. Every
+miss was root-caused (105 files across 41 commits):
+
+| cause | ripgrep | IronRDP |
+|---|---|---|
+| no call edge: the files are coupled through data, configuration or a wire protocol (CLI flags read by the printer/searcher; agent ↔ daemon ↔ ActiveX over IPC; builder options consumed by the server) | 12 | 44 |
+| no call edge: repository-wide sweep (lint fixes, typos, edition migration, a constant bumped across crates) — nothing could predict these | 9 | 0 |
+| test or example file with no call edge to the seed (ripgrep's integration tests run the `rg` binary through a macro; IronRDP's test suites live in separate crates) | 15 | 16 |
+| reachable, but beyond the default bounds (found with up 4 / down 3 / 200 nodes) | 4 | 3 |
+| the commit itself adds the call (co-edit) | 1 | 1 |
+| index gap or tool bug | 0 | 0 |
+
+What the miss means: call edges alone do not make a safe `scope`. A hook
+that confined an agent to the live set would have blocked a needed edit in
+most of these commits. Widening the bounds recovers only a few files; the
+bulk need edges a language server does not report (data, configuration,
+IPC, tests run as processes). `scope` stays unbuilt until a measured way to
+add those edges exists. The byte and time results stand on their own:
+`orient` gives a small, fast answer about the code around one function.
+
+Caveats: two Rust projects, one maintainer style each; commits are a proxy
+for tasks (squash-merged feature PRs in IronRDP are larger than one task);
+the seed is the first changed function, which may not be where a person
+would start. No agent session or token count was measured. Raw rows for
+these public projects are reproducible with the two scripts above; private
+projects were also tried, but none had a qualifying commit, and Swift
+could not be run in this environment (no toolchain download).
+
+Found while measuring: IronRDP pins Rust 1.94.1, whose rustup proxy lacked
+rust-analyzer, so every run failed at server start while `status` reported
+the profile ready. Fixed in `src/profiles/rust.ts` (detection now runs the
+proxy when a toolchain is pinned and names the `rustup component add` fix).
 
 ## 2026-10-07 — polyglot bytes-only spot check
 

@@ -130,3 +130,15 @@ client now treats MethodNotFound on hierarchy follow-up requests as "not
 implemented", omits those results and says so in `warnings`. The polyglot
 tests also skip a native server that is present but does not start (a rustup
 proxy without the rust-analyzer component).
+
+## 2026-10-14 — `scope` waits: call edges alone miss half of a change
+
+The phase-2 offline benchmark (docs/measurement.md, Results) missed its
+pre-stated scope-recall threshold: median 0.50 against 0.80 on ripgrep and
+IronRDP. Most misses are files coupled through data, configuration, IPC or
+tests run as processes, which no language server reports as calls; wider
+bounds recover only a few. So `scope` is not built on today's live set. Any
+attempt to widen it (for example co-change history, test-to-code maps or
+configuration keys) gets its own thresholds before it is measured. `orient`
+itself is unaffected: its answers were a median 6–7% of the bytes of the
+files they name, in well under a second once indexed.
