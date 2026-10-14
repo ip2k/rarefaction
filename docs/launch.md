@@ -60,12 +60,33 @@ Everything posted publicly goes through Sean first (CLAUDE.md rule).
 | PulseMCP | Submit button | often imported from the MCP Registry; search first |
 | Cline MCP Marketplace | issue on `cline/mcp-marketplace` | needs the 400×400 icon: `docs/images/icon-400.png` |
 
-One-line description for listings:
+### Copy for listings
 
-> Rarefaction — hands a coding agent one symbol's signature, body, callers
-> (tests marked), callees, implementations and live files from the language
-> server's index in one call. Swift, Rust, C/C++, TypeScript/JavaScript,
-> Python, WAT. GPL-3.0-or-later.
+- **Name:** Rarefaction · **package:** `rarefaction-lsp-mcp` (npm) ·
+  `io.github.ip2k/rarefaction-lsp-mcp` (MCP Registry) · **licence:** GPL-3.0-or-later
+- **Repository:** https://github.com/ip2k/rarefaction · **support:**
+  https://github.com/ip2k/rarefaction/issues · **privacy:**
+  https://github.com/ip2k/rarefaction#privacy
+- **Icon:** `docs/images/icon-400.png` (400×400), `plugins/rarefaction/assets/icon.png`
+  (512×512), `docs/images/icon.svg`
+- **Category:** developer tools / code intelligence · **transport:** local stdio,
+  `npx -y rarefaction-lsp-mcp` · **tools:** `orient`, `status`
+- **Short (≤100 chars):** LSP call graph for coding agents: a symbol's callers,
+  callees, tests and live files in one call.
+- **Long:** Rarefaction is a local MCP server that gives coding agents the
+  call graph and code context for one symbol, straight from the project's
+  language server. One `orient` call returns the signature and body, callers
+  (tests marked), callees, implementations, the tests that reach it with a
+  command to run only them, and the short list of files a change can affect,
+  so the agent reads that instead of whole files. On real commits in ripgrep
+  and IronRDP the answer was a median 6–7% of the bytes of the files it
+  names. Profiles cover Swift, Rust, C/C++, TypeScript/JavaScript, Python and
+  WebAssembly text. Runs locally with no network calls or telemetry; also a
+  Claude Code and Codex plugin.
+- **awesome-mcp-servers line** (Developer Tools; check their legend first):
+  `- [ip2k/rarefaction](https://github.com/ip2k/rarefaction) 📇 🏠 🍎 🐧 - LSP call graph for coding agents: one orient call returns a symbol's signature, body, callers (tests marked), callees, implementations and the files a change can affect, from Swift, Rust, C/C++, TypeScript, Python or WAT language servers.`
+- **Glama claim file** (`glama.json` at the repo root, once the listing exists):
+  `{"$schema": "https://glama.ai/mcp/schemas/server.json", "maintainers": ["ip2k"]}`
 
 ## 5. Evidence
 
