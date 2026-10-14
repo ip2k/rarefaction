@@ -32,3 +32,11 @@ navigation/diagnostics/semantic edits for substantive work. This package's Seren
 project configuration selects TypeScript and excludes the multilingual fixtures;
 the verifier creates isolated projects for those. See docs/serena.md. The local
 Serena registration uses tools/serena_launcher.py to register the WAT adapter.
+
+## Colours
+
+Use Rosé Pine for every diagram, doc and UI colour unless something else is
+specified: **Dawn** by default and for light themes, **Moon** for dark
+themes. Values come from <https://github.com/rose-pine/palette>; offer both
+variants where the medium can switch (README images use `<picture>` with
+`prefers-color-scheme`). `tools/render_diagrams.py` holds both palettes.

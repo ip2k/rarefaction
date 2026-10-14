@@ -59,6 +59,14 @@ Claude Code ──MCP stdio──> rarefaction (this) ──LSP stdio──> sou
   go through the `oss-contributions` skill; Sean signs off before anything is
   posted.
 
+## Colours
+
+Use Rosé Pine for every diagram, doc and UI colour unless something else is
+specified: **Dawn** by default and for light themes, **Moon** for dark
+themes. Values come from <https://github.com/rose-pine/palette>; offer both
+variants where the medium can switch (README images use `<picture>` with
+`prefers-color-scheme`). `tools/render_diagrams.py` holds both palettes.
+
 ## Running against a real project
 
 Xcode projects need `buildServer.json` at the root (`brew install
