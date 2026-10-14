@@ -43,6 +43,15 @@ jobs:
           else
             npm publish --access public
           fi
+      - name: Wait for npm to serve the version
+        run: |
+          # npm processes a new version for a few minutes before serving it,
+          # and the MCP Registry validates against what npm serves.
+          for i in $(seq 1 40); do
+            [ "$(npm view "rarefaction-lsp-mcp@${TAG#v}" version 2>/dev/null)" = "${TAG#v}" ] && exit 0
+            sleep 15
+          done
+          echo "rarefaction-lsp-mcp@${TAG#v} not visible on npm after 10 minutes"; exit 1
       - name: Publish to the MCP Registry
         run: |
           curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
