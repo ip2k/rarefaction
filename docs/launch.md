@@ -12,16 +12,18 @@ commit, so no earlier history is public. The original private repository
 
 ## 2. First release (npm + MCP Registry)
 
-- [ ] On npmjs.com: account with 2FA, then Access Tokens → Generate New Token
-      → Granular, read/write on packages, **with "Bypass two-factor
-      authentication" ticked** (otherwise CI fails with `EOTP`), scoped to
-      `rarefaction-lsp-mcp` once it exists (first publish: all packages, then
-      narrow it). Alternative: publish once locally with `npm publish --otp`,
-      then set up npm trusted publishing for this workflow and drop the token.
-- [ ] GitHub → Settings → Secrets and variables → Actions → New repository
-      secret `NPM_TOKEN`.
+- [ ] First publish by hand, from a clone of `ip2k/rarefaction` at the
+      release commit: `npm ci && npm publish --access public --otp <code>`.
+      npm's Trusted Publisher settings exist only once the package does.
+- [ ] npmjs.com → `rarefaction-lsp-mcp` → Settings → Trusted Publisher →
+      GitHub Actions: user `ip2k`, repository `rarefaction`, workflow
+      `release.yml`, no environment; allowed actions: tick `npm publish`.
+- [ ] Settings → Publishing access → "Require two-factor authentication and
+      disallow tokens". Revoke any automation tokens; delete any `NPM_TOKEN`
+      repository secret.
 - [ ] Actions → Release → Run workflow on `main` (or push tag `v0.2.0`); it
-      publishes npm, the MCP Registry and the GitHub release.
+      skips npm when the version is already there, then publishes the MCP
+      Registry entry and the GitHub release.
 - [ ] Check: `npx -y rarefaction-lsp-mcp` starts (it waits on stdin; Ctrl-C),
       <https://www.npmjs.com/package/rarefaction-lsp-mcp> and
       <https://registry.modelcontextprotocol.io/v0/servers?search=rarefaction>.

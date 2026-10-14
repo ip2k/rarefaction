@@ -10,7 +10,7 @@ project ever changes hands.
 | GitHub repository `ip2k/rarefaction` | Sean (personal, `ip2k`) | `README.md`, `package.json`, `server.json`, plugin manifests | public from 2026-10-14; one squashed initial commit |
 | GitHub repository `ip2k/rarefaction-lsp-mcp` | Sean (personal, `ip2k`) | — | private; full development history before 2026-10-14 |
 | npm package `rarefaction-lsp-mcp` | Sean (personal npm account) | `package.json`, `server.json`, plugin `.mcp.json` | name still free 2026-10-14; first publish by tag `v0.2.0` |
-| `NPM_TOKEN` repository secret | Sean | `.github/workflows/release.yml` | npm automation token; rotate if leaked |
+| npm Trusted Publisher (GitHub Actions, `ip2k/rarefaction`, `release.yml`) | Sean | `.github/workflows/release.yml` | OIDC; no npm token stored anywhere; package disallows tokens |
 | MCP Registry name `io.github.ip2k/rarefaction-lsp-mcp` | Sean (GitHub `ip2k` namespace) | `server.json`, `package.json` `mcpName` | published by release workflow via GitHub OIDC; no secret |
 | Plugin marketplaces `rarefaction` (Claude Code, Codex) | Sean | `.claude-plugin/`, `.agents/plugins/`, `plugins/rarefaction/` | served from this repository |
 | GPL-3.0-or-later licence, copyright Sean | Sean | `LICENSE`, `package.json`, `README.md` | MIT until 2026-10-14 |
