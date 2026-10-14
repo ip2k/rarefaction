@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
@@ -14,6 +15,7 @@ it("uses Claude's project root and lets explicit --root override it", async () =
       cwd: resolve("."), env: { ...env, CLAUDE_PROJECT_DIR: claudeRoot }, stderr: "pipe" });
     try {
       await client.connect(transport);
+      expect(client.getServerVersion()).toMatchObject({ name: "rarefaction", version: JSON.parse(readFileSync("package.json", "utf8")).version });
       const result = await client.callTool({ name: "status", arguments: {} });
       expect(result.isError).not.toBe(true);
       expect(result.structuredContent?.root).toBe(root);

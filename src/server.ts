@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod/v4";
 import { ResolveError } from "./graph/symbols.js";
@@ -6,7 +7,9 @@ import { orient, OrientInput, OrientOutput } from "./tools/orient.js";
 import { ProfileId, type Workspace } from "./workspace.js";
 
 export const SERVER_NAME = "rarefaction";
-export const SERVER_VERSION = "0.2.0";
+// Read from package.json so the reported version cannot drift from the published one.
+// src/ and dist/ both sit one level below the package root, and npm always ships package.json.
+export const SERVER_VERSION: string = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
 const selection = { profile: ProfileId.optional().describe("Source-language profile; required for bare names in mixed workspaces."),
   project: z.string().optional().describe("Workspace-relative project directory, e.g. tools/driver for a nested Cargo package.") };
 const StatusOutput = z.object({
