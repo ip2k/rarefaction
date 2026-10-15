@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-15
+
 ### Added
 - `scope` tool: the working set for a change to one symbol — `orient`'s
   call-graph files plus files that historically change in the same commits
