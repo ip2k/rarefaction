@@ -142,3 +142,16 @@ attempt to widen it (for example co-change history, test-to-code maps or
 configuration keys) gets its own thresholds before it is measured. `orient`
 itself is unaffected: its answers were a median 6–7% of the bytes of the
 files they name, in well under a second once indexed.
+
+## 2026-10-15 — `scope` ships as advisory
+
+Sean asked for `scope`. It combines the call graph with git co-change
+history, using parameters fixed before measuring. On held-out commits its
+median recall is 0.50 on ripgrep and IronRDP, a miss against 0.80, while
+staying small (1–3% of files) and fast (warm p90 under 0.5 s). It ships
+as an advisory working set: every answer says it is not a boundary, the
+README links the measured coverage, and no hook blocks edits outside it.
+Next candidates, each to be pre-registered and measured on fresh commits:
+a sweep rule that weights large commits down instead of dropping them,
+co-change anchored on the call-graph files as well as the seed's file, and
+configuration-key and test-to-code links.

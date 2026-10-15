@@ -26,3 +26,7 @@ from the project's language server. Use it before opening whole files.
    separately: they are not in the graph.
 6. Use the "Tests that reach it" section and its "run only these" command to
    pick the tests to run after a change.
+7. Before editing, call `scope` on the symbol you will change. It lists the
+   files to read and check (call graph plus files that historically change
+   with it), each with a reason. It is advisory: a change may still need
+   files outside it, so look before editing elsewhere rather than refusing to.

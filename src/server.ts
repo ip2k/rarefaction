@@ -4,6 +4,7 @@ import * as z from "zod/v4";
 import { ResolveError } from "./graph/symbols.js";
 import { renderOrient } from "./render.js";
 import { orient, OrientInput, OrientOutput } from "./tools/orient.js";
+import { renderScope, scope, ScopeInput, ScopeOutput } from "./tools/scope.js";
 import { ProfileId, type Workspace } from "./workspace.js";
 
 export const SERVER_NAME = "rarefaction";
@@ -32,6 +33,21 @@ export function createServer(workspace: Workspace): McpServer {
       const session = await workspace.select(input);
       const result = await orient(session, { ...input, symbol: workspace.symbolFor(session, input.symbol) });
       return { content: [{ type: "text", text: renderOrient(result) }], structuredContent: result };
+    } catch (err) {
+      if (err instanceof ResolveError) return { content: [{ type: "text", text: err.message }], isError: true };
+      throw err;
+    }
+  });
+  server.registerTool("scope", {
+    title: "Working set for a change",
+    description: "The files a change to one symbol is likely to touch: orient's call-graph files (callers, callees, implementations, tests) plus files that have historically changed in the same commits as the symbol's file, each with its reason. Use when planning an edit, to know which files to read and check. Advisory, not a boundary: real changes often touch files outside it.",
+    inputSchema: ScopeInput.extend(selection), outputSchema: ScopeOutput,
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  }, async input => {
+    try {
+      const session = await workspace.select(input);
+      const result = await scope(session, { ...input, symbol: workspace.symbolFor(session, input.symbol) });
+      return { content: [{ type: "text", text: renderScope(result) }], structuredContent: result };
     } catch (err) {
       if (err instanceof ResolveError) return { content: [{ type: "text", text: err.message }], isError: true };
       throw err;

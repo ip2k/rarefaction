@@ -5,7 +5,12 @@
 // the files the commit changed.
 //
 //   npx tsx scripts/measure-scope.ts --repo <git checkout> --profile rust \
-//     [--project <subdir>] [--max 25] [--label name] [--out results.jsonl]
+//     [--project <subdir>] [--max 25] [--skip-measured 0] [--tool orient|scope] \
+//     [--label name] [--out results.jsonl]
+//
+// --tool scope measures the `scope` working set (call graph + co-change)
+// instead of orient's live set; --skip-measured N skips the first N commits
+// that would be measured, for a held-out run after an earlier one.
 //
 // --label replaces the repository name in the output, so results from private
 // projects can be aggregated without naming them. Rows still carry symbols and
@@ -23,6 +28,7 @@ import { profileById } from "../src/profiles/index.js";
 import { renderOrient } from "../src/render.js";
 import { Session } from "../src/session.js";
 import { orient, type OrientOutputType } from "../src/tools/orient.js";
+import { renderScope, scope } from "../src/tools/scope.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -36,6 +42,8 @@ const root = join(repo, project);
 const max = Number(arg("--max", "25"));
 const out = arg("--out");
 const label = arg("--label", repo.split("/").pop()!)!;
+const skipMeasured = Number(arg("--skip-measured", "0"));
+const tool = arg("--tool", "orient")!;
 const GENERATED = /(^|\/)(target|generated|gen)\/|\.pb\.rs$|_generated\.|\.g\.dart$/;
 
 const git = (...a: string[]) => execFileSync("git", ["-C", repo, ...a], { encoding: "utf8", maxBuffer: 1 << 28 });
@@ -51,7 +59,7 @@ function candidates(): { picked: Candidate[]; scanned: number; skipped: Record<s
   const picked: Candidate[] = [];
   let scanned = 0;
   for (const line of shas) {
-    if (picked.length >= max * 4) break;
+    if (picked.length >= (max + skipMeasured) * 4) break;
     const [sha, parent, extra] = line.split(" ");
     if (!parent || extra) continue;
     scanned += 1;
@@ -84,6 +92,19 @@ function enclosing(symbols: DocumentSymbol[] | SymbolInformation[] | null, line:
   return best;
 }
 
+async function hasFunctionSeed(c: Candidate): Promise<boolean> {
+  git("checkout", "-q", "--detach", "-f", c.parent);
+  const session = new Session(root, profile);
+  try {
+    const client = await session.lsp();
+    return Boolean(enclosing(await client.documentSymbols(await client.open(join(repo, c.seedFile))), c.seedLine - 1));
+  } catch {
+    return true; // the earlier run counted errored rows as measured
+  } finally {
+    await session.close();
+  }
+}
+
 const bytes = (rel: string) => { try { return statSync(join(repo, rel)).size; } catch { return 0; } };
 const outputBytes = (o: OrientOutputType) => Buffer.byteLength(renderOrient(o)) + Buffer.byteLength(JSON.stringify(o));
 
@@ -111,6 +132,35 @@ async function reachedAtCommit(c: Candidate, name: string, missed: string[]): Pr
   }
 }
 
+// Scope mode: the working set is call graph + co-change; history comes from
+// the checked-out parent, so the commit never informs its own scope.
+async function measureScope(c: Candidate, session: Session, symbol: string, name: string, line: number, t0: number) {
+  const input = { symbol, up: 2, down: 1, max_nodes: 50 };
+  await scope(session, input);
+  const coldMs = Date.now() - t0;
+  const t1 = Date.now();
+  const result = await scope(session, input);
+  const warmMs = Date.now() - t1;
+  const inSet = (pred: (s: string[]) => boolean) =>
+    new Set(result.files.filter((f) => pred(f.sources)).map((f) => relative(repo, join(root, f.file))));
+  const all = inSet(() => true);
+  const graph = inSet((s) => s.includes("call_graph") || s.includes("symbol"));
+  const history = inSet((s) => s.includes("co_change"));
+  const recall = (set: Set<string>) => c.modified.filter((f) => set.has(f)).length / c.modified.length;
+  const missed = c.modified.filter((f) => !all.has(f));
+  const setBytes = [...all].reduce((n, f) => n + bytes(f), 0);
+  const ob = Buffer.byteLength(renderScope(result)) + Buffer.byteLength(JSON.stringify(result));
+  return {
+    sha: c.sha.slice(0, 10), seed: `${name} @ ${c.seedFile}:${line}`,
+    changed: c.modified.length, added: c.added.length, hits: c.modified.length - missed.length,
+    recall: recall(all), recall_call_graph: recall(graph), recall_co_change: recall(history), missed,
+    live: all.size, co_change_only: result.counts.co_change_only, anchor_commits: result.co_change.anchor_commits,
+    project_files: result.counts.project_source_files, live_fraction: all.size / result.counts.project_source_files,
+    scope_bytes: ob, set_bytes: setBytes, truncated: result.truncated, warnings: result.warnings,
+    cold_ms: coldMs, warm_ms: warmMs,
+  };
+}
+
 async function measure(c: Candidate) {
   git("checkout", "-q", "--detach", "-f", c.parent);
   const session = new Session(root, profile);
@@ -122,6 +172,7 @@ async function measure(c: Candidate) {
     if (!seed) return { sha: c.sha, skipped: "first hunk not inside a function or method" };
     const pos = seed.selectionRange.start;
     const symbol = `${relative(root, join(repo, c.seedFile))}:${pos.line + 1}:${pos.character + 1}`;
+    if (tool === "scope") return await measureScope(c, session, symbol, seed.name, pos.line + 1, t0);
     const input = { symbol, up: 2, down: 1, max_nodes: 50, include_body: true, max_body_lines: 80 };
     await orient(session, input); // cold: includes the server start and indexing
     const coldMs = Date.now() - t0;
@@ -157,8 +208,14 @@ async function main() {
   const { picked, scanned, skipped } = candidates();
   process.stderr.write(`${repo}: ${picked.length} candidates from ${scanned} commits; skipped ${JSON.stringify(skipped)}\n`);
   let measured = 0;
+  let skippedMeasured = 0;
   for (const c of picked) {
     if (measured >= max) break;
+    if (skippedMeasured < skipMeasured) {
+      // Held-out runs skip commits an earlier run measured: same seed rule, no LSP work kept.
+      if (await hasFunctionSeed(c)) skippedMeasured += 1;
+      continue;
+    }
     const row = await measure(c);
     if (!("skipped" in row)) measured += 1;
     process.stderr.write(`${JSON.stringify(row)}\n`);
