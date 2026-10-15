@@ -5,6 +5,7 @@
 [![CI](https://github.com/ip2k/rarefaction/actions/workflows/ci.yml/badge.svg)](https://github.com/ip2k/rarefaction/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/rarefaction-lsp-mcp)](https://www.npmjs.com/package/rarefaction-lsp-mcp)
 [![License: GPL v3+](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
+[![ip2k/rarefaction MCP server](https://glama.ai/mcp/servers/ip2k/rarefaction/badges/score.svg)](https://glama.ai/mcp/servers/ip2k/rarefaction)
 
 **Rarefaction** is a Model Context Protocol (MCP) server that gives a coding
 agent the **call graph and code context for one symbol** straight from the
