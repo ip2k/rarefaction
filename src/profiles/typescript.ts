@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { listSourceFiles } from "../fs.js";
-import { exists, liveFreshness, outside, testFile } from "./common.js";
+import { exists, liveFreshness, outside, stemFrom, testFile } from "./common.js";
 import type { Profile } from "./profile.js";
 const extensions = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
 const require = createRequire(import.meta.url);
@@ -19,6 +19,8 @@ export const typescriptProfile: Profile = {
     initializationOptions: { tsserver: { path: require.resolve("typescript/lib/tsserver.js") } } }; },
   freshness: root => liveFreshness(root, extensions),
   isTestFile: testFile,
+  testedStem: stemFrom(/(?:^|\/)([^/]+)\.(?:test|spec)\.[^./]+$/),
+  stringLiteral: /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`([^`\\$]*)`/g,
   isTestCase: name => /^(?:test|it|spec)(?:\b|[_A-Z])/.test(name),
   isExternal: outside,
   testRunHint: tests => ({ command: `npm test -- ${[...new Set(tests.map(t => t.relPath))].map(p => JSON.stringify(p)).join(" ")}`,

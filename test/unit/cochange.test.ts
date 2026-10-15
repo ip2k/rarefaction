@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COCHANGE, countNeighbours, parseLog } from "../../src/graph/cochange.js";
+import { COCHANGE, commitWeight, countNeighbours, parseLog } from "../../src/graph/cochange.js";
 
 describe("co-change neighbours", () => {
   it("counts files changed with the anchor and applies the support and confidence floors", () => {
@@ -32,5 +32,16 @@ describe("co-change neighbours", () => {
     const log = "\0\nsrc/a.rs\nREADME.md\nother/x.rs\n\0\nsrc/b.rs\n";
     const toProject = (p: string) => (p.startsWith("src/") ? p.slice(4) : undefined);
     expect(parseLog(log, toProject, (p) => p.endsWith(".rs"))).toEqual([["a.rs"], ["b.rs"]]);
+  });
+
+  it("weights sweeps by 20 ÷ n instead of dropping them, and drops imports over 500 files", () => {
+    expect(commitWeight(20, true)).toBe(1);
+    expect(commitWeight(40, true)).toBe(0.5);
+    expect(commitWeight(501, true)).toBe(0);
+    const sweep = (n: number) => ["a.rs", "b.rs", ...Array.from({ length: n - 2 }, (_, i) => `f${i}.rs`)];
+    const r = countNeighbours([sweep(40), sweep(40), sweep(40), sweep(40), ["a.rs", "c.rs"]], "a.rs", true);
+    expect(r.anchorCommits).toBe(3);
+    expect(r.neighbours[0]).toEqual({ file: "b.rs", support: 2, confidence: 2 / 3 });
+    expect(r.neighbours.map((n) => n.file)).not.toContain("c.rs"); // support 1
   });
 });
