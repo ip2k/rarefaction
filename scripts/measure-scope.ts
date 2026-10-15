@@ -6,7 +6,7 @@
 //
 //   npx tsx scripts/measure-scope.ts --repo <git checkout> --profile rust \
 //     [--project <subdir>] [--max 25] [--skip-measured 0] [--tool orient|scope] \
-//     [--label name] [--out results.jsonl]
+//     [--label name] [--candidates-per-target 4] [--out results.jsonl]
 //
 // --tool scope measures the `scope` working set and its round-2 variants
 // instead of orient's live set; --skip-measured N skips the first N commits
@@ -44,6 +44,7 @@ const out = arg("--out");
 const label = arg("--label", repo.split("/").pop()!)!;
 const skipMeasured = Number(arg("--skip-measured", "0"));
 const tool = arg("--tool", "orient")!;
+const candidateFactor = Number(arg("--candidates-per-target", "4")); // raise when many commits have no function seed
 const GENERATED = /(^|\/)(target|generated|gen)\/|\.pb\.rs$|_generated\.|\.g\.dart$/;
 
 const git = (...a: string[]) => execFileSync("git", ["-C", repo, ...a], { encoding: "utf8", maxBuffer: 1 << 28 });
@@ -59,7 +60,7 @@ function candidates(): { picked: Candidate[]; scanned: number; skipped: Record<s
   const picked: Candidate[] = [];
   let scanned = 0;
   for (const line of shas) {
-    if (picked.length >= (max + skipMeasured) * 4) break;
+    if (picked.length >= (max + skipMeasured) * candidateFactor) break;
     const [sha, parent, extra] = line.split(" ");
     if (!parent || extra) continue;
     scanned += 1;
