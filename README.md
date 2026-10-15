@@ -209,14 +209,11 @@ projects still need a new build to refresh their cross-file index.
 | tool | what |
 |---|---|
 | `orient` | `{symbol, profile?, project?, up?, down?, max_nodes?, include_body?, max_body_lines?}` — the bundle above. `symbol` may be `updateLocation`, `Engine.updateLocation`, or `path/File.swift:204:10`. Ambiguous names come back as an error listing exact positions. |
+| `scope` | `{symbol, profile?, project?, up?, down?, max_nodes?}` — the working set for a change to that symbol: the call-graph files from `orient` plus files that have historically changed in the same commits as the symbol's file (from git history), each with its reason. Advisory: it lists what to read and check, not what is safe to ignore ([measured coverage](docs/measurement.md#results)). |
 | `status` | `{profile?, project?}` — what the server can see: the profile inventory and which one is selected, prerequisites such as a build-server config, index freshness, and which LSP features the server offers. Call this first if `orient` finds nothing. |
 
-Planned: `scope` (the live set as an enforceable working set — tree-shaking
-for a task) and `impacted_tests` (the upward walk restricted to tests, as a
-runnable selection). The live set is not yet a safe boundary for edits: on
-real commits it contained a median half of the other files the change
-touched ([measurement](docs/measurement.md#results)), so `scope` waits on
-widening it beyond call edges.
+Planned: `impacted_tests` (the upward walk restricted to tests, as a
+runnable selection).
 
 ## Languages and configuration
 
