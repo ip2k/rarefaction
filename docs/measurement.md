@@ -88,6 +88,38 @@ What this does not measure: whether an agent working under a `scope` hook
 finishes the task, or token use in a real session; those need the phase-1
 agent protocol.
 
+### Widened scope: design and thresholds, stated 2026-10-15 before any measurement
+
+The phase-2 result showed call edges alone miss half of a change. `scope`
+adds co-change history, which records coupling a language server cannot
+see (data, configuration, IPC, tests run as processes). The design is fixed
+here, before any run, so it cannot be fitted to the data:
+
+- **Scope** = `orient`'s live set (default bounds) ∪ the seed file's
+  co-change neighbours.
+- **Co-change neighbours.** From the project's git history before the
+  working tree's `HEAD` (no merges, at most the last 1,000 commits), drop
+  commits that touch more than 20 source files (sweeps). For each other
+  source file *f*: support = commits touching both the seed's file and *f*;
+  confidence = support ÷ commits touching the seed's file. Keep *f* when
+  support ≥ 2 and confidence ≥ 0.15; at most 15 files, by support then
+  confidence. No other tuning knobs.
+- **Held-out corpus.** Same projects, revisions and qualifying rule as the
+  phase-2 run, but the *next* 25 measured commits per project, skipping the
+  25 already used. History for co-change is taken at each commit's parent,
+  so the commit being predicted never informs its own scope.
+
+Thresholds (the phase-2 bars, unchanged):
+
+- median scope recall ≥ **0.80** per project
+- median scope size ≤ **0.10** of project source files
+- p90 warm `scope` time ≤ **5 s**
+
+Reported alongside, not judged: recall of the live set alone and of
+co-change alone on the same commits. Every miss is root-caused as before.
+If `scope` misses, it still ships as an advisory working set with the
+measured recall stated, and no enforcing hook is built.
+
 ## Results
 
 ### 2026-10-14 — phase 2, scope recall offline (ripgrep, IronRDP)
