@@ -155,3 +155,22 @@ Next candidates, each to be pre-registered and measured on fresh commits:
 a sweep rule that weights large commits down instead of dropping them,
 co-change anchored on the call-graph files as well as the seed's file, and
 configuration-key and test-to-code links.
+
+## 2026-10-15 — scope round 2: what to test next
+
+Sean picked all three candidates for the next round:
+- weight sweeps down instead of dropping them;
+- anchor co-change on the call-graph files as well as the seed's file;
+- profile-owned test-to-code and configuration-key links.
+
+Lowering the support and confidence floors was left out as likely noise.
+Other decisions:
+- **Size budget.** Stays at 10% of project files.
+- **Evaluation.** Fresh commits from ripgrep and IronRDP, plus one new
+  TypeScript project and one new Python project, so a gain has to carry
+  across languages.
+- **If it passes.** `scope` stays advisory and never blocks edits.
+
+`docs/measurement.md` ("Scope round 2") holds the exact rules and the
+thresholds, written before any run. It also holds an ablation rule: a
+component ships only if it earns recall.

@@ -120,6 +120,75 @@ co-change alone on the same commits. Every miss is root-caused as before.
 If `scope` misses, it still ships as an advisory working set with the
 measured recall stated, and no enforcing hook is built.
 
+### Scope round 2: design and thresholds, stated 2026-10-15 before any measurement
+
+The widened `scope` (0.3.0) missed 133 files on held-out commits. They
+fell into three groups: 51 never co-changed with the seed's file, 51
+co-changed with it only in sweeps, and 31 fell below the support or
+confidence floor. Sean chose three candidates, one for each group's
+coupling. The support and confidence floors (2, 0.15) stay as they are.
+
+- **W, weighted sweeps.** Large commits count with less weight instead of
+  being dropped. A commit with *n* source files has weight
+  w = min(1, 20 ÷ *n*). Commits over 500 files are still dropped as
+  imports or reformatting. Support is the summed weight of commits that
+  touch both files. Confidence is support ÷ the summed weight of commits
+  that touch the anchor. The floors, the 1,000-commit window and the
+  15-file cap do not change.
+- **A, call-graph anchors.** Co-change, under the same rule as the
+  variant it is combined with, is also computed for every file in
+  `orient`'s live set, not only the seed's file. The seed anchor keeps
+  its 15 files. The other anchors together add at most 15 more files,
+  ranked by their best confidence across anchors. Each reason names the
+  anchor.
+- **L, links a language server does not report.** These rules are
+  profile-owned:
+  - **test ↔ code by name.** Applied to every live file. Each profile
+    states its naming conventions. Rust: `tests/<stem>.rs` and
+    `<stem>_test.rs`. TS/JS: `<stem>.test.*` and `<stem>.spec.*`.
+    Python: `test_<stem>.py` and `<stem>_test.py`. Swift:
+    `<Stem>Tests.swift`. C/C++: `test_<stem>.*` and `<stem>_test.*`.
+  - **configuration keys.** Taken from the seed's body at the parent
+    commit. A key is a string literal of 4–40 characters, shaped like
+    `[A-Za-z0-9][A-Za-z0-9_.-]*` and containing at least one `-`, `_`
+    or `.`. Literal syntax comes from the profile. Each key is searched
+    for literally across project source files and kept only when it
+    occurs in 1–5 other files. At most 10 files are added this way.
+- **Candidate** = the 0.3.0 scope with W replacing the sweep drop,
+  plus A and L.
+
+Corpus: the phase-2 qualifying rule, unchanged.
+
+- **ripgrep and IronRDP.** The same revisions as before. Skip the 50
+  commits per project already measured and take the next 25.
+- **Two projects not used before.** These test whether a gain carries
+  across languages: `honojs/hono` (TypeScript) and `encode/httpx`
+  (Python), at `main` on the day of the run. The revision is recorded,
+  with 25 commits each.
+- **History.** Co-change history is taken at each commit's parent.
+
+Thresholds, judged on the candidate, per project. All four projects must
+pass:
+
+- median scope recall ≥ **0.80**
+- median scope size ≤ **0.10** of project source files
+- p90 warm `scope` time ≤ **5 s**
+
+Reported on the same commits, not judged: the 0.3.0 scope, each of W, A
+and L added to it alone, and the candidate with each component removed.
+
+**Ablation.** A component ships only if removing it from the candidate
+lowers pooled recall by at least **0.03** on at least two of the four
+projects. A component that adds files without earning recall is dropped.
+This rule applies whether or not the candidate passes, as long as the
+shipped set stays within the size threshold. Every miss is root-caused
+as before.
+
+What a pass changes: `scope` stays advisory. No hook will block edits.
+The answer's warning is replaced by the measured recall. A miss is
+recorded as a miss. The floors, weights and caps above are not retuned
+against these commits.
+
 ## Results
 
 ### 2026-10-15 — widened `scope` on held-out commits (ripgrep, IronRDP)
