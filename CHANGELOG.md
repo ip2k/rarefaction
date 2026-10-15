@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-14
+
 ### Fixed
 - The MCP `initialize` response now reports the installed package version.
   It was hard-coded to `0.2.0`, so 0.2.1 still identified itself as 0.2.0.
