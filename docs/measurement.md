@@ -122,6 +122,46 @@ measured recall stated, and no enforcing hook is built.
 
 ## Results
 
+### 2026-10-15 — widened `scope` on held-out commits (ripgrep, IronRDP)
+
+Design and thresholds as stated above (commit `2845830`, before any run);
+`scope` as shipped in `src/tools/scope.ts` with `src/graph/cochange.ts`. Same
+revisions as the phase-2 run, full git history, the next 25 measured
+commits per project (no overlap with the phase-2 set). Harness:
+`scripts/measure-scope.ts --tool scope --skip-measured 25`.
+
+| metric | threshold | ripgrep | IronRDP | verdict |
+|---|---|---|---|---|
+| median scope recall | ≥ 0.80 | **0.50** (pooled 0.37) | **0.50** (pooled 0.47) | **miss** |
+| — call graph alone, same commits | — | 0.50 (mean 0.45) | 0.33 (mean 0.40) | |
+| — co-change alone, same commits | — | 0.00 (mean 0.06) | 0.20 (mean 0.25) | |
+| — scope, mean | — | 0.51 | 0.57 | |
+| commits with full recall | — | 5 / 25 | 6 / 25 | |
+| median scope size ÷ project files | ≤ 0.10 | 0.031 (3 files) | 0.012 (9 files) | pass |
+| files added by co-change only, median | — | 0 | 4 | |
+| warm `scope` time, median / p90 | p90 ≤ 5 s | 157 / 211 ms | 387 / 445 ms | pass |
+| `scope` answer, median | — | 1.5 KB | 3.2 KB | |
+
+**Scope recall is still a miss.** Co-change history raises coverage where a
+file has a long history with its neighbours (IronRDP: median 0.33 → 0.50,
+mean 0.40 → 0.57), but the median change still touches files the set does
+not name. Every one of the 133 missed files was checked against the history
+before its commit:
+
+| why co-change did not include it | ripgrep | IronRDP |
+|---|---|---|
+| never changed with the seed's file before | 12 | 39 |
+| changed with it only in sweeps of more than 20 source files (dropped by design) | 32 | 19 |
+| changed with it, but below support 2 / confidence 0.15 | 13 | 18 |
+
+New coupling (first-time co-edits) cannot come from history at all. The
+sweep filter cost ripgrep the most, but changing it now would fit the
+parameters to this test set; a different sweep rule has to be stated
+before it is measured on fresh commits.
+
+What ships: `scope` as an advisory working set that says so in every
+answer, with this coverage linked from the README. No enforcing hook.
+
 ### 2026-10-14 — phase 2, scope recall offline (ripgrep, IronRDP)
 
 Protocol and thresholds as stated above (commit `99ccaf8`, before any run).

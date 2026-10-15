@@ -70,7 +70,7 @@ Everything posted publicly goes through Sean first (CLAUDE.md rule).
 - **Icon:** `docs/images/icon-400.png` (400×400), `plugins/rarefaction/assets/icon.png`
   (512×512), `docs/images/icon.svg`
 - **Category:** developer tools / code intelligence · **transport:** local stdio,
-  `npx -y rarefaction-lsp-mcp` · **tools:** `orient`, `status`
+  `npx -y rarefaction-lsp-mcp` · **tools:** `orient`, `scope`, `status`
 - **Short (≤100 chars):** LSP call graph for coding agents: a symbol's callers,
   callees, tests and live files in one call.
 - **Long:** Rarefaction is a local MCP server that gives coding agents the
