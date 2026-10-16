@@ -6,9 +6,9 @@
 //
 //   npx tsx scripts/measure-scope.ts --repo <git checkout> --profile rust \
 //     [--project <subdir>] [--max 25] [--skip-measured 0] [--tool orient|scope] \
-//     [--label name] [--out results.jsonl]
+//     [--label name] [--candidates-per-target 4] [--out results.jsonl]
 //
-// --tool scope measures the `scope` working set (call graph + co-change)
+// --tool scope measures the `scope` working set and its round-2 variants
 // instead of orient's live set; --skip-measured N skips the first N commits
 // that would be measured, for a held-out run after an earlier one.
 //
@@ -28,7 +28,7 @@ import { profileById } from "../src/profiles/index.js";
 import { renderOrient } from "../src/render.js";
 import { Session } from "../src/session.js";
 import { orient, type OrientOutputType } from "../src/tools/orient.js";
-import { renderScope, scope } from "../src/tools/scope.js";
+import { assemble, renderScope, scope, SCOPE_0_3, scopeContext, type ScopeOptions } from "../src/tools/scope.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -44,6 +44,7 @@ const out = arg("--out");
 const label = arg("--label", repo.split("/").pop()!)!;
 const skipMeasured = Number(arg("--skip-measured", "0"));
 const tool = arg("--tool", "orient")!;
+const candidateFactor = Number(arg("--candidates-per-target", "4")); // raise when many commits have no function seed
 const GENERATED = /(^|\/)(target|generated|gen)\/|\.pb\.rs$|_generated\.|\.g\.dart$/;
 
 const git = (...a: string[]) => execFileSync("git", ["-C", repo, ...a], { encoding: "utf8", maxBuffer: 1 << 28 });
@@ -59,7 +60,7 @@ function candidates(): { picked: Candidate[]; scanned: number; skipped: Record<s
   const picked: Candidate[] = [];
   let scanned = 0;
   for (const line of shas) {
-    if (picked.length >= (max + skipMeasured) * 4) break;
+    if (picked.length >= (max + skipMeasured) * candidateFactor) break;
     const [sha, parent, extra] = line.split(" ");
     if (!parent || extra) continue;
     scanned += 1;
@@ -132,31 +133,51 @@ async function reachedAtCommit(c: Candidate, name: string, missed: string[]): Pr
   }
 }
 
-// Scope mode: the working set is call graph + co-change; history comes from
-// the checked-out parent, so the commit never informs its own scope.
+// Scope mode: the working set is call graph + co-change (+ links); history
+// comes from the checked-out parent, so the commit never informs its own
+// scope. Every round-2 variant (docs/measurement.md, "Scope round 2") is
+// assembled from one context, so they are scored on identical inputs.
+const VARIANTS: Record<string, ScopeOptions> = {
+  "0.3": SCOPE_0_3,
+  "+W": { ...SCOPE_0_3, weighted: true },
+  "+A": { ...SCOPE_0_3, anchors: true },
+  "+L": { ...SCOPE_0_3, links: true },
+  candidate: { weighted: true, anchors: true, links: true },
+  "-W": { weighted: false, anchors: true, links: true },
+  "-A": { weighted: true, anchors: false, links: true },
+  "-L": { weighted: true, anchors: true, links: false },
+};
+
 async function measureScope(c: Candidate, session: Session, symbol: string, name: string, line: number, t0: number) {
   const input = { symbol, up: 2, down: 1, max_nodes: 50 };
-  await scope(session, input);
+  await scope(session, input, VARIANTS.candidate);
   const coldMs = Date.now() - t0;
   const t1 = Date.now();
-  const result = await scope(session, input);
+  const result = await scope(session, input, VARIANTS.candidate);
   const warmMs = Date.now() - t1;
-  const inSet = (pred: (s: string[]) => boolean) =>
-    new Set(result.files.filter((f) => pred(f.sources)).map((f) => relative(repo, join(root, f.file))));
-  const all = inSet(() => true);
-  const graph = inSet((s) => s.includes("call_graph") || s.includes("symbol"));
-  const history = inSet((s) => s.includes("co_change"));
+  const ctx = await scopeContext(session, input);
+  const toRepo = (f: string) => relative(repo, join(root, f));
   const recall = (set: Set<string>) => c.modified.filter((f) => set.has(f)).length / c.modified.length;
+  const variants: Record<string, { recall: number; size: number; missed: string[] }> = {};
+  for (const [v, options] of Object.entries(VARIANTS)) {
+    const r = await assemble(ctx, options);
+    const set = new Set(r.files.map((f) => toRepo(f.file)));
+    variants[v] = { recall: recall(set), size: set.size, missed: c.modified.filter((f) => !set.has(f)) };
+  }
+  const base = await assemble(ctx, SCOPE_0_3);
+  const graph = new Set(base.files.filter((f) => f.sources.includes("call_graph") || f.sources.includes("symbol")).map((f) => toRepo(f.file)));
+  const all = new Set(result.files.map((f) => toRepo(f.file)));
   const missed = c.modified.filter((f) => !all.has(f));
-  const setBytes = [...all].reduce((n, f) => n + bytes(f), 0);
+  const reasons = Object.fromEntries(result.files.filter((f) => c.modified.includes(toRepo(f.file))).map((f) => [toRepo(f.file), f.reasons]));
   const ob = Buffer.byteLength(renderScope(result)) + Buffer.byteLength(JSON.stringify(result));
   return {
     sha: c.sha.slice(0, 10), seed: `${name} @ ${c.seedFile}:${line}`,
     changed: c.modified.length, added: c.added.length, hits: c.modified.length - missed.length,
-    recall: recall(all), recall_call_graph: recall(graph), recall_co_change: recall(history), missed,
-    live: all.size, co_change_only: result.counts.co_change_only, anchor_commits: result.co_change.anchor_commits,
+    recall: recall(all), recall_call_graph: recall(graph), missed, hit_reasons: reasons, variants,
+    live: all.size, co_change_only: result.counts.co_change_only, link_only: result.counts.link_only,
+    anchor_commits: result.co_change.anchor_commits,
     project_files: result.counts.project_source_files, live_fraction: all.size / result.counts.project_source_files,
-    scope_bytes: ob, set_bytes: setBytes, truncated: result.truncated, warnings: result.warnings,
+    scope_bytes: ob, truncated: result.truncated, warnings: result.warnings,
     cold_ms: coldMs, warm_ms: warmMs,
   };
 }
