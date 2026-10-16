@@ -1,8 +1,8 @@
 // `scope`: the working set for a change to one symbol — the files `orient`
 // finds through the language server (callers, callees, implementations,
-// tests), files that have historically changed together with them, and
-// files linked by test naming or a shared configuration key. Every file
-// carries the reason it is in the set.
+// tests) and files that have historically changed together with them.
+// Every file carries the reason it is in the set. Test-name and
+// configuration-key links are built but off: they did not earn recall.
 //
 // Advisory, not a boundary: docs/measurement.md records how much of a real
 // change the set covers. Callers should treat files outside it as "look
@@ -54,7 +54,8 @@ export interface ScopeOptions {
   links: boolean;
 }
 export const SCOPE_0_3: ScopeOptions = { weighted: false, anchors: false, links: false };
-export const SCOPE_OPTIONS: ScopeOptions = { weighted: true, anchors: true, links: true };
+/** What ships: the round-2 ablation kept only A (docs/measurement.md); W and L stay off. */
+export const SCOPE_OPTIONS: ScopeOptions = { weighted: false, anchors: true, links: false };
 
 /** Everything `scope` reads, gathered once so several option sets can be assembled from it. */
 export interface ScopeContext {
