@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-16
+
+### Changed
+- Dependency updates: the MCP SDK (`@modelcontextprotocol/server`) 2.0.0 →
+  2.3.1, which is now Apache-2.0 rather than MIT (compatible with this
+  project's GPL-3.0-or-later), plus patch updates to the test tooling.
+- CI and release workflows use `actions/checkout` and `actions/setup-node` v7.
+
 ## [0.3.0] - 2026-10-15
 
 ### Added
