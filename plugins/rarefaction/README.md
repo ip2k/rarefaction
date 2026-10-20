@@ -3,7 +3,7 @@
 Bundles the [Rarefaction](https://github.com/ip2k/rarefaction) MCP
 server (launched with `npx -y rarefaction-lsp-mcp`) and an `orient-first`
 skill that tells the agent to call `status` and `orient` before reading whole
-files. Works in Claude Code and Codex.
+files, and `scope` before editing. Works in Claude Code and Codex.
 
 ```bash
 # Claude Code (or /plugin install … inside a session)

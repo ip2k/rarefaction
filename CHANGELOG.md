@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- The README and the plugin README named only `status` and `orient`; they now
+  list `scope` too, so `mcp__rarefaction__scope` can be allowed with the
+  others. The README, the agent-guidance snippet and the `orient-first` skill
+  now say to pass `project` with position queries in a Cargo workspace or
+  monorepo: without it the answer comes from the nearest member and leaves
+  out callers in the other members.
+
 ## [0.3.1] - 2026-10-16
 
 ### Changed
