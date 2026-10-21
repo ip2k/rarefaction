@@ -12,7 +12,7 @@ export const SERVER_NAME = "rarefaction";
 // src/ and dist/ both sit one level below the package root, and npm always ships package.json.
 export const SERVER_VERSION: string = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
 const selection = { profile: ProfileId.optional().describe("Source-language profile; required for bare names in mixed workspaces."),
-  project: z.string().optional().describe("Workspace-relative project directory, e.g. tools/driver for a nested Cargo package.") };
+  project: z.string().optional().describe("Workspace-relative project directory, e.g. tools/driver for a nested Cargo package. Without it, a path:line:column symbol is answered from its enclosing Cargo workspace, else from its nearest project marker (a warning says when that leaves part of the workspace out).") };
 const StatusOutput = z.object({
   root: z.string(), profiles: z.array(z.object({ id: z.string(), root: z.string(), profile: z.string(), ok: z.boolean(),
     facts: z.array(z.string()), advice: z.array(z.string()), language_server_started: z.boolean(),
@@ -30,8 +30,9 @@ export function createServer(workspace: Workspace): McpServer {
     annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   }, async input => {
     try {
-      const session = await workspace.select(input);
+      const { session, warnings } = await workspace.route(input);
       const result = await orient(session, { ...input, symbol: workspace.symbolFor(session, input.symbol) });
+      if (warnings.length) result.warnings = [...warnings, ...result.warnings ?? []];
       return { content: [{ type: "text", text: renderOrient(result) }], structuredContent: result };
     } catch (err) {
       if (err instanceof ResolveError) return { content: [{ type: "text", text: err.message }], isError: true };
@@ -45,8 +46,9 @@ export function createServer(workspace: Workspace): McpServer {
     annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   }, async input => {
     try {
-      const session = await workspace.select(input);
+      const { session, warnings } = await workspace.route(input);
       const result = await scope(session, { ...input, symbol: workspace.symbolFor(session, input.symbol) });
+      result.warnings.unshift(...warnings);
       return { content: [{ type: "text", text: renderScope(result) }], structuredContent: result };
     } catch (err) {
       if (err instanceof ResolveError) return { content: [{ type: "text", text: err.message }], isError: true };

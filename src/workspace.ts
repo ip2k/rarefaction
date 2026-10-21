@@ -1,7 +1,7 @@
 // Route each request to its source-language session, including mixed repositories.
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { extname, isAbsolute, join, relative, resolve, dirname } from "node:path";
+import { extname, isAbsolute, join, relative, resolve, dirname, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as z from "zod/v4";
 import { parseSymbolQuery, ResolveError } from "./graph/symbols.js";
@@ -23,6 +23,9 @@ function merge(a: unknown, b: unknown): unknown {
   for (const [key, value] of Object.entries(b)) out[key] = key in out ? merge(out[key], value) : value;
   return out;
 }
+
+type SelectInput = { profile?: string | undefined; project?: string | undefined; symbol?: string | undefined };
+export interface Selection { session: Session; warnings: string[] }
 
 export class Workspace {
   private readonly sessions = new Map<string, Session>();
@@ -77,26 +80,66 @@ export class Workspace {
     return candidates.filter((s, i) => detection[i]!.ok || this.settings.profiles?.[s.profile.id as z.infer<typeof ProfileId>] || s.profile.id === this.forcedProfile);
   }
 
-  async select(input: { profile?: string | undefined; project?: string | undefined; symbol?: string | undefined }): Promise<Session> {
+  async select(input: SelectInput): Promise<Session> { return (await this.route(input)).session; }
+
+  /** The session for a request, with warnings about how it was chosen. */
+  async route(input: SelectInput): Promise<Selection> {
     const query = input.symbol ? parseSymbolQuery(input.symbol) : undefined;
     const extensionProfile = query?.kind === "position" ? profiles.find(p => p.extensions.includes(extname(query.file)))?.id : undefined;
     const id = input.profile ?? this.forcedProfile ?? extensionProfile ?? this.settings.default_profile;
     let project = input.project;
-    // Nested source projects should not inherit the monorepo's unrelated root.
-    const markers = id ? profileById(id)?.rootMarkers ?? [] : [];
-    if (query?.kind === "position" && !project && markers.length) {
-      let dir = dirname(this.within(query.file));
-      while (dir !== this.rootPath && !relative(this.rootPath, dir).startsWith("..")) {
-        if ((await Promise.all(markers.map(marker => exists(join(dir, marker))))).some(Boolean)) {
-          project = relative(this.rootPath, dir); break;
-        }
-        dir = dirname(dir);
-      }
+    const warnings: string[] = [];
+    // Nested source projects should not inherit the monorepo's unrelated root,
+    // and workspace members should not lose their sibling members.
+    const profile = id ? profileById(id) : undefined;
+    if (query?.kind === "position" && !project && profile?.rootMarkers?.length) {
+      const routed = await this.projectFor(this.within(query.file), profile);
+      if (routed) { project = routed.project; warnings.push(...routed.warnings); }
     }
-    if (id) return this.session(id, project);
+    if (id) return { session: this.session(id, project), warnings };
     const candidates = await this.inventory(project);
-    if (candidates.length === 1) return candidates[0]!;
+    if (candidates.length === 1) return { session: candidates[0]!, warnings };
     throw new ResolveError(candidates.length ? `Mixed-language workspace: pass profile (${candidates.map(s => s.profile.id).join(", ")}) or use a path:line:column symbol. Use project for a nested package.` : "No supported sources found. Use status, or specify profile and project.");
+  }
+
+  /**
+   * The project for a position without `project`: the outermost workspace that
+   * declares the file's nearest marked directory a member, else that directory.
+   * Undefined when the nearest marker is the workspace root's own, or there is
+   * none (the configured or default root then applies).
+   */
+  private async projectFor(file: string, profile: Profile): Promise<{ project: string; warnings: string[] } | undefined> {
+    const markerIn = async (dir: string) => {
+      for (const marker of profile.rootMarkers ?? []) if (await exists(join(dir, marker))) return marker;
+      return undefined;
+    };
+    const ancestors: string[] = [];
+    for (let dir = dirname(file); ; dir = dirname(dir)) {
+      const rel = relative(this.rootPath, dir);
+      if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) break;
+      ancestors.push(dir);
+      if (dir === this.rootPath || dir === dirname(dir)) break;
+    }
+    let nearest = -1, marker: string | undefined;
+    for (let i = 0; i < ancestors.length && !marker; i++) { marker = await markerIn(ancestors[i]!); if (marker) nearest = i; }
+    const member = ancestors[nearest];
+    if (!member || member === this.rootPath) return undefined;
+    let chosen = member;
+    let enclosing: { dir: string; kind: "group" | "nested"; marker?: string } | undefined;
+    for (const dir of ancestors.slice(nearest + 1)) {
+      const verdict = await profile.enclosingWorkspace?.(dir, member);
+      if (verdict === "workspace") { chosen = dir; enclosing = undefined; continue; }
+      const outerMarker = await markerIn(dir);
+      if (verdict === "group") enclosing = { dir, kind: "group" };
+      else if (outerMarker) enclosing = { dir, kind: "nested", marker: outerMarker };
+    }
+    const name = (dir: string) => relative(this.rootPath, dir).split(sep).join("/") || ".";
+    const place = (dir: string) => dir === this.rootPath ? "The workspace root" : `"${name(dir)}"`;
+    const answered = chosen === member ? `Answered from "${name(chosen)}" only, the nearest directory with a ${marker}.` : `Answered from the workspace at "${name(chosen)}" only.`;
+    const warnings = !enclosing ? [] : [enclosing.kind === "group"
+      ? `${answered} ${place(enclosing.dir)} groups it with other packages, but the language server answers one package at a time, so callers in other packages are not listed, even with project set.`
+      : `${answered} ${place(enclosing.dir)} has its own ${enclosing.marker} but does not list it as a workspace member, so files outside it are not searched; pass project "${name(enclosing.dir)}" if it belongs to that project.`];
+    return { project: name(chosen), warnings };
   }
 
   /** Convert a workspace-relative position to the selected session's root. */

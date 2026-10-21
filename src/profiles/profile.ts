@@ -39,6 +39,16 @@ export interface Profile {
 
   /** Nearest ancestor project markers for position-query routing. */
   readonly rootMarkers?: readonly string[];
+  /**
+   * How `dir`, an ancestor of `member` (the nearest directory holding a root
+   * marker for a position query), encloses it. "workspace": `dir` declares a
+   * workspace whose members include `member`, and the language server answers
+   * for every member when started at `dir`, so the query is routed there.
+   * "group": `dir` encloses `member` in a larger workspace or project, but the
+   * server answers one member at a time, so the query stays at `member` and
+   * says so. Undefined: neither, as far as the profile can tell.
+   */
+  enclosingWorkspace?(dir: string, member: string): Promise<"workspace" | "group" | undefined>;
   /** This server reports header declarations separately from their bodies. */
   readonly collapseDeclarations?: boolean;
   /** Without a compilation database, this server only indexes open files. */
