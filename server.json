@@ -3,7 +3,7 @@
   "name": "io.github.ip2k/rarefaction-lsp-mcp",
   "title": "Rarefaction",
   "description": "LSP call graph for coding agents: a symbol's callers, callees, tests and live files in one call.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "websiteUrl": "https://github.com/ip2k/rarefaction#readme",
   "repository": {
     "url": "https://github.com/ip2k/rarefaction",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "rarefaction-lsp-mcp",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

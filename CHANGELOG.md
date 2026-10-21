@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-20
+
 ### Changed
 - `scope` also adds files that historically change with the call-graph
   files, not only with the symbol's own file (at most 15 more). On held-out
