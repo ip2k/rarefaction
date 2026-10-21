@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-20
+
 ### Fixed
 - A position in a git worktree, submodule or other checkout nested inside
   the workspace (a directory holding `.git`) is answered from that checkout
