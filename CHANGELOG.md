@@ -6,12 +6,27 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
+- A position query without `project` in a Cargo workspace member crate is
+  now answered from the workspace, so callers in the other member crates are
+  listed. It was answered from the member crate alone, which dropped them
+  without a warning (12 of 24 callers on one real workspace). Members are
+  found the way Cargo finds them: `members` globs less `exclude`, a
+  `package.workspace` pointer, and path dependencies of the root package.
+- When a position query is still answered from a narrower directory than an
+  enclosing project, `orient` and `scope` say so in `warnings` and name the
+  `project` to pass.
+- The README, agent snippet and `orient-first` skill said `project: "."`
+  keeps callers in other packages of a TypeScript monorepo. It does not: the
+  TypeScript language server answers one `tsconfig.json` project at a time.
+  They now say so, and so does a warning on positions in npm, yarn or pnpm
+  workspace packages.
 - The README and the plugin README named only `status` and `orient`; they now
   list `scope` too, so `mcp__rarefaction__scope` can be allowed with the
-  others. The README, the agent-guidance snippet and the `orient-first` skill
-  now say to pass `project` with position queries in a Cargo workspace or
-  monorepo: without it the answer comes from the nearest member and leaves
-  out callers in the other members.
+  others.
+
+### Changed
+- New runtime dependency `smol-toml` (BSD-3-Clause, no dependencies of its
+  own) to read `Cargo.toml` workspace tables.
 
 ## [0.4.0] - 2026-10-20
 

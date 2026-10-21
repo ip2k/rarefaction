@@ -186,8 +186,8 @@ project instruction file:
 > Use rarefaction's status tool once in a new project, then orient on the
 > relevant symbol before reading whole files, and scope on a symbol before
 > editing it (advisory: also look outside the files it lists). In mixed
-> repositories pass profile or a workspace-relative path:line:column; in
-> workspaces with nested packages, pass project with position queries. Start
+> repositories pass profile or a workspace-relative path:line:column, and
+> pass project for a nested package that is not a workspace member. Start
 > with the default graph bounds; expand only when necessary. Follow freshness
 > and coverage advice, and inspect FFI/generated bindings separately when
 > relevant.
@@ -239,13 +239,17 @@ cross-language FFI edges are not indexed as a unified graph.
 
 Optional `.rarefaction.json` in the workspace root configures each profile.
 Paths in `project`, profile `root`, and relative position queries are
-relative to that workspace. A position query without `project` discovers
-the nearest supported project marker. In a workspace whose members have their
-own markers (a Cargo workspace, a TypeScript monorepo with a `tsconfig.json`
-per package) that is the member, so callers in other members are left out;
-pass `project` (`"."` for the whole workspace) to keep them. A git worktree
-nested inside the workspace is reached the same way: name it in `project` and
-give positions its path as a prefix. Bare names in mixed workspaces need
+relative to that workspace. A position query without `project` is answered
+from the outermost Cargo workspace that takes the file's crate in (as a
+member, a `package.workspace` pointer or a path dependency of the root
+package), else from the nearest supported project marker. When that leaves
+part of an enclosing project out, the answer carries a warning that says so
+and which `project` to pass. TypeScript is the exception: the TypeScript
+language server answers one `tsconfig.json` project at a time, so in an npm,
+yarn or pnpm workspace with a `tsconfig.json` per package, callers in other
+packages are not listed, with or without `project`, and the warning says
+that too. A git worktree nested inside the workspace is reached by naming it
+in `project` and giving positions its path as a prefix. Bare names in mixed workspaces need
 `profile` or a configured `default_profile`:
 
 ```json

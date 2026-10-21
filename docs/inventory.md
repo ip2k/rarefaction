@@ -22,6 +22,7 @@ project ever changes hands.
 | `@modelcontextprotocol/server`, `/client` | Apache-2.0 (MIT before 2.3) | yes | v2.3.1 |
 | `vscode-languageserver-protocol` (+ `vscode-jsonrpc`) | MIT | yes | |
 | `zod` | MIT | yes | v4 |
+| `smol-toml` | BSD-3-Clause | yes | v1.9.1; bundled runtime dependency, no dependencies of its own; reads `Cargo.toml` to find the enclosing workspace; licence checked in installed package |
 | `typescript`, `vitest`, `tsx` | MIT / Apache-2.0 | yes | dev only |
 | sourcekit-lsp | Apache-2.0 with runtime exception | yes | not bundled; runs from the user's toolchain |
 | xcode-build-server | MIT | yes | not bundled; user installs via brew |
