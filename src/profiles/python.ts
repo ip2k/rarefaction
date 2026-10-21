@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { listSourceFiles } from "../fs.js";
-import { exists, liveFreshness, outside, testFile } from "./common.js";
+import { exists, liveFreshness, outside, stemFrom, testFile } from "./common.js";
 import type { Profile } from "./profile.js";
 const require = createRequire(import.meta.url);
 export const pythonProfile: Profile = {
@@ -17,6 +17,8 @@ export const pythonProfile: Profile = {
     initializationOptions: { python: { analysis: { diagnosticMode: "openFilesOnly", typeCheckingMode: "off" } } } }; },
   freshness: root => liveFreshness(root, [".py", ".pyi"]),
   isTestFile: testFile,
+  testedStem: stemFrom(/(?:^|\/)test_([^/]+)\.py$/, /(?:^|\/)([^/]+)_test\.py$/),
+  stringLiteral: /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'/g,
   isTestCase: name => /(?:^|\.)test_/.test(name),
   isExternal: outside,
   testRunHint: tests => ({ command: `python -m pytest ${[...new Set(tests.map(t => t.relPath))].map(p => JSON.stringify(p)).join(" ")}`,

@@ -174,3 +174,21 @@ Other decisions:
 `docs/measurement.md` ("Scope round 2") holds the exact rules and the
 thresholds, written before any run. It also holds an ablation rule: a
 component ships only if it earns recall.
+
+## 2026-10-16 — scope round 2: call-graph anchors ship, the rest stays off
+
+The candidate missed: median recall was 0.50 on ripgrep and 0.60 on
+IronRDP against 0.80. hono and httpx passed.
+
+By the pre-registered ablation, only call-graph anchors earned their
+place. They added +0.06, +0.11 and +0.09 pooled recall on three of the
+four projects. Weighted sweeps and links did not.
+
+On httpx the set breaks the 10% size limit with or without anchors.
+Sean ruled that anchors ship anyway, with the gap recorded.
+
+Weighted sweeps and links stay in the code, switched off.
+
+The next round must pre-register how small projects are judged. It
+should look for signals beyond co-change, because 31–42% of the Rust
+misses never changed together with the seed's file at all.

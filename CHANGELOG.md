@@ -13,6 +13,15 @@ All notable changes to this project are documented here. The format follows
   monorepo: without it the answer comes from the nearest member and leaves
   out callers in the other members.
 
+## [0.4.0] - 2026-10-20
+
+### Changed
+- `scope` also adds files that historically change with the call-graph
+  files, not only with the symbol's own file (at most 15 more). On held-out
+  commits this raised pooled recall on ripgrep, IronRDP and httpx; see
+  `docs/measurement.md`, "Scope round 2". Weighted sweeps and test-name /
+  configuration-key links were measured too and stay off.
+
 ## [0.3.1] - 2026-10-16
 
 ### Changed

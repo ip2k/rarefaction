@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { exists, liveFreshness, outside, testFile } from "./common.js";
+import { exists, liveFreshness, outside, stemFrom, testFile } from "./common.js";
 import type { Profile } from "./profile.js";
 
 export const rustProfile: Profile = {
@@ -26,6 +26,7 @@ export const rustProfile: Profile = {
   } }; },
   freshness: root => liveFreshness(root, [".rs"]),
   isTestFile: path => testFile(path),
+  testedStem: stemFrom(/(?:^|\/)tests\/([^/]+)\.rs$/, /(?:^|\/)([^/]+)_test\.rs$/),
   isTestCase: (_name, above) => /#\[(?:\w+::)?test\]/.test(above ?? ""),
   isExternal: outside,
   testRunHint: tests => ({ command: `cargo test ${JSON.stringify(tests[0]?.name.split("::").pop() ?? "")}`,
