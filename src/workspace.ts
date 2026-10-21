@@ -104,7 +104,8 @@ export class Workspace {
 
   /**
    * The project for a position without `project`: the outermost workspace that
-   * declares the file's nearest marked directory a member, else that directory.
+   * declares the file's nearest marked directory a member, else that directory,
+   * looking no further out than the checkout that holds the file.
    * Undefined when the nearest marker is the workspace root's own, or there is
    * none (the configured or default root then applies).
    */
@@ -124,9 +125,13 @@ export class Workspace {
     for (let i = 0; i < ancestors.length && !marker; i++) { marker = await markerIn(ancestors[i]!); if (marker) nearest = i; }
     const member = ancestors[nearest];
     if (!member || member === this.rootPath) return undefined;
+    // A directory holding .git (a repository, git worktree or submodule) is a
+    // checkout of its own: projects above it neither contain nor group it.
+    let top = ancestors.length - 1;
+    for (let i = nearest; i < ancestors.length; i++) if (await exists(join(ancestors[i]!, ".git"))) { top = i; break; }
     let chosen = member;
     let enclosing: { dir: string; kind: "group" | "nested"; marker?: string } | undefined;
-    for (const dir of ancestors.slice(nearest + 1)) {
+    for (const dir of ancestors.slice(nearest + 1, top + 1)) {
       const verdict = await profile.enclosingWorkspace?.(dir, member);
       if (verdict === "workspace") { chosen = dir; enclosing = undefined; continue; }
       const outerMarker = await markerIn(dir);

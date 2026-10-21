@@ -219,6 +219,13 @@ member stays at its package and the answer says that callers in other
 packages are not listed. The earlier advice to pass `project: "."` in a
 TypeScript monorepo was wrong and is withdrawn.
 
+The walk outward stops at the first directory holding `.git`. A git
+worktree under `.claude/worktrees/` in a Cargo workspace checkout has its
+own workspace; 0.4.1 answered from it correctly but then warned that the
+outer workspace did not list it and suggested `project: "."`, which cannot
+reach a file under a dot directory. A worktree, submodule or vendored
+checkout is its own project, so nothing above it is considered (0.4.2).
+
 Candidates for reading `Cargo.toml`: `smol-toml` (BSD-3-Clause, no
 dependencies, TOML 1.1 compliant, ships types), `@iarna/toml` (ISC,
 last released in 2020) and a hand-written reader for the three tables

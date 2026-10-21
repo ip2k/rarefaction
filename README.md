@@ -248,8 +248,10 @@ and which `project` to pass. TypeScript is the exception: the TypeScript
 language server answers one `tsconfig.json` project at a time, so in an npm,
 yarn or pnpm workspace with a `tsconfig.json` per package, callers in other
 packages are not listed, with or without `project`, and the warning says
-that too. A git worktree nested inside the workspace is reached by naming it
-in `project` and giving positions its path as a prefix. Bare names in mixed workspaces need
+that too. The search stops at a directory holding `.git`, so a position in a
+git worktree, submodule or other checkout nested inside the workspace is
+answered from that checkout alone; give positions its path as a prefix, and
+name it in `project` for bare names. Bare names in mixed workspaces need
 `profile` or a configured `default_profile`:
 
 ```json
