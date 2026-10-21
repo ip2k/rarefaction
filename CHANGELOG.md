@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-20
+
 ### Fixed
 - A position query without `project` in a Cargo workspace member crate is
   now answered from the workspace, so callers in the other member crates are
