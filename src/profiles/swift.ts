@@ -141,6 +141,8 @@ export const swiftProfile: Profile = {
     return out;
   },
 
+  testedStem: (relPath) => relPath.match(/(?:^|\/)([^/]+)Tests\.swift$/)?.[1],
+
   isTestFile(relPath) {
     const parts = relPath.split("/");
     return parts.some((p) => p === "Tests" || p.endsWith("Tests")) || basename(relPath).endsWith("Tests.swift");

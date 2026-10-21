@@ -49,6 +49,14 @@ export interface Profile {
   launch(rootPath: string): Promise<LaunchSpec>;
   freshness(rootPath: string): Promise<Freshness>;
 
+  /**
+   * For a test file named after the code it tests, that code file's stem
+   * (basename without extension); undefined for anything else.
+   */
+  testedStem?(relPath: string): string | undefined;
+  /** String literals in this language; the first defined group is the content. Global flag. */
+  readonly stringLiteral?: RegExp;
+
   /** Relative path (from root) is a test source file. */
   isTestFile(relPath: string): boolean;
   /**

@@ -191,6 +191,91 @@ against these commits.
 
 ## Results
 
+### 2026-10-16 — scope round 2 on held-out commits (ripgrep, IronRDP, hono, httpx)
+
+The design and thresholds are as stated above (commit `d989eec`, before
+any run). The candidate is commit `e8b835d`. Every variant was assembled
+from one context per commit, so all of them saw identical inputs.
+Harness: `scripts/measure-scope.ts --tool scope`. Revisions:
+- ripgrep `3fce3b5` and IronRDP `7b976a6`: commits 51–75.
+- hono `588ec13` (2026-10-13) and httpx `b5addb6` (2026-02-23): their
+  first 25 commits.
+
+Two harness notes:
+- hono ran out of seedable commits at 21 under the old four-per-target
+  cap. `--candidates-per-target` measured the next 4.
+- The 4 rows that run added were written twice; each commit is counted
+  once.
+
+| metric | threshold | ripgrep | IronRDP | hono | httpx | verdict |
+|---|---|---|---|---|---|---|
+| candidate median recall | ≥ 0.80 | **0.50** | **0.60** | 1.00 | 1.00 | **miss** |
+| candidate median size ÷ project files | ≤ 0.10 | 0.060 | 0.052 | 0.028 | **0.300** | **miss** (httpx) |
+| candidate warm p90 | ≤ 5 s | 214 ms | 429 ms | 832 ms | 377 ms | pass |
+| project source files | | 83 | 603 | 452 | 60 | |
+
+Pooled recall (median in brackets) of every variant on the same commits:
+
+| variant | ripgrep | IronRDP | hono | httpx |
+|---|---|---|---|---|
+| call graph alone (median) | (0.50) | (0.40) | (0.50) | (0.50) |
+| 0.3.0 scope | 0.42 (0.50) | 0.49 (0.50) | 0.89 (1.00) | 0.60 (1.00) |
+| + W only | 0.43 | 0.48 | 0.89 | 0.61 |
+| + A only | 0.50 (0.50) | 0.57 (0.67) | 0.89 (1.00) | 0.68 (1.00) |
+| + L only | 0.45 | 0.49 | 0.89 | 0.60 |
+| candidate (W + A + L) | 0.52 | 0.59 | 0.89 | 0.70 |
+| without W | 0.52 | 0.57 | 0.89 | 0.68 |
+| without A | 0.47 | 0.48 | 0.89 | 0.61 |
+| without L | 0.50 | 0.59 | 0.89 | 0.70 |
+
+**Ablation.** The rule: a component ships only if removing it from the
+candidate costs at least 0.03 pooled recall on at least two projects.
+
+| component | ripgrep | IronRDP | hono | httpx | verdict |
+|---|---|---|---|---|---|
+| W, weighted sweeps | 0.000 | 0.015 | 0.000 | 0.023 | dropped |
+| A, call-graph anchors | 0.057 | 0.110 | 0.000 | 0.091 | **ships** |
+| L, links | 0.023 | 0.000 | 0.000 | 0.000 | dropped |
+
+The size condition was ambiguous on httpx. httpx has 60 source files, so
+the 0.3.0 set already took a median 0.148 of them, over the threshold
+before any change. With A the share is 0.283. Sean read the condition as
+"no worse than the baseline's own result" and A ships. The other three
+projects stay within it with A: 0.047, 0.035 and 0.007. The next
+pre-registration must say how small projects are judged.
+
+**Why the candidate missed.** There were 130 missed files: 42 in ripgrep,
+56 in IronRDP, 6 in hono, 26 in httpx. Each was checked against the
+history before its commit:
+
+| cause | ripgrep | IronRDP | hono | httpx |
+|---|---|---|---|---|
+| never changed together with the seed's file | 8 | 21 | 4 | 8 |
+| changed together with it, but below the floors | 34 | 35 | 2 | 18 |
+| — of those, weighted support under 1 (sweeps only) | 24 | 17 | 0 | 1 |
+| missed files that are tests | 12 | 18 | 3 | 17 |
+
+Weighting sweeps kept them in the count, but at their weight they rarely
+reach the support floor of 2, so W recovered almost nothing.
+
+The test-name rule mostly missed: these projects do not name tests after
+the files they test (`tests/multiline.rs`, httpx's
+`tests/client/test_*.py`). Where names do match (hono's `index.test.ts`),
+the rule linked every `index.ts`.
+
+Configuration keys found few shared literals in the seed bodies.
+
+Read across languages:
+- On hono, co-change from the 0.3.0 scope already reaches nearly every
+  changed file, so nothing has left to add.
+- On the Rust projects, half of each change still sits outside any signal
+  this design has.
+
+As decided before the run, `scope` stays advisory. W and L remain in the
+code, switched off (`SCOPE_OPTIONS` in `src/tools/scope.ts`), for a later
+round.
+
+
 ### 2026-10-15 — widened `scope` on held-out commits (ripgrep, IronRDP)
 
 Design and thresholds as stated above (commit `2845830`, before any run);

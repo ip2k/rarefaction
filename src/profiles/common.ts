@@ -30,3 +30,8 @@ export async function liveFreshness(root: string, extensions: readonly string[])
 }
 
 export const testFile = (path: string): boolean => /(^|\/)(tests?|__tests__)(\/|$)|(?:^|\/)test[_-][^/]+|(?:[._-](?:test|spec)|_tests)\.[^.]+$/i.test(path);
+
+/** `testedStem` from file-name patterns; group 1 of the first match is the stem. */
+export function stemFrom(...patterns: RegExp[]): (path: string) => string | undefined {
+  return (path) => { for (const p of patterns) { const m = path.match(p); if (m) return m[1]; } return undefined; };
+}

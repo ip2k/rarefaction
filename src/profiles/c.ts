@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 import { listSourceFiles } from "../fs.js";
-import { exists, liveFreshness, outside, testFile } from "./common.js";
+import { exists, liveFreshness, outside, stemFrom, testFile } from "./common.js";
 import type { Profile } from "./profile.js";
 
 const extensions = [".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx"];
@@ -26,6 +26,7 @@ export const cProfile: Profile = {
   async launch() { return { command: "clangd", args: ["--background-index", "--limit-results=0", "--log=error", "-j=2"] }; },
   freshness: root => liveFreshness(root, extensions),
   isTestFile: testFile,
+  testedStem: stemFrom(/(?:^|\/)test_([^/]+)\.[^./]+$/, /(?:^|\/)([^/]+)_test\.[^./]+$/),
   isTestCase: (name, above) => /^test[_A-Z]|^TEST(?:_F|_P)?\b/.test(name) || /\bTEST(?:_F|_P)?\s*\(/.test(above ?? ""),
   isExternal: outside,
   testRunHint: () => ({ command: "ctest --test-dir <build-directory> -R <test-name>", note: "Replace placeholders for a CMake/CTest project; otherwise use the project's test runner. Do not flash hardware to run orientation checks." }),
