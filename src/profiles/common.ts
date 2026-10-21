@@ -1,12 +1,40 @@
 import { access, stat } from "node:fs/promises";
 import { constants } from "node:fs";
-import { delimiter, isAbsolute, join, relative, sep } from "node:path";
+import { delimiter, isAbsolute, join, posix, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalPath, isSkippedDir, listSourceFiles } from "../fs.js";
 import type { Freshness } from "./profile.js";
 
 export async function exists(path: string): Promise<boolean> {
   try { await stat(path); return true; } catch { return false; }
+}
+
+/** `member` relative to `dir`, with "/" separators, as workspace globs spell it. */
+export function workspacePath(dir: string, member: string): string {
+  return relative(dir, member).split(sep).join("/");
+}
+
+const tidy = (pattern: string): string => pattern.replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "");
+
+/**
+ * Whether a workspace member path matches a list of workspace globs (Cargo
+ * `members`, npm/yarn `workspaces`, pnpm `packages`). A leading "!" excludes;
+ * the last matching pattern wins.
+ */
+export function matchesWorkspaceGlobs(path: string, patterns: readonly string[]): boolean {
+  let included = false;
+  for (const raw of patterns) {
+    const negated = raw.startsWith("!");
+    const pattern = tidy(negated ? raw.slice(1) : raw);
+    if (pattern && (path === pattern || posix.matchesGlob(path, pattern))) included = !negated;
+  }
+  return included;
+}
+
+/** `path` is `prefix` or lies below it (Cargo `exclude` entries are path prefixes). */
+export function underPath(path: string, prefix: string): boolean {
+  const p = tidy(prefix);
+  return p.length > 0 && (path === p || path.startsWith(`${p}/`));
 }
 
 /** Resolve without spawning the executable (which might itself be an LSP). */

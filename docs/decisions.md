@@ -192,3 +192,47 @@ Weighted sweeps and links stay in the code, switched off.
 The next round must pre-register how small projects are judged. It
 should look for signals beyond co-change, because 31–42% of the Rust
 misses never changed together with the seed's file at all.
+
+## 2026-10-20 — positions without `project` answer from the enclosing workspace
+
+A position query without `project` used to root at the nearest project
+marker. In a Cargo workspace that is the member crate, and callers in the
+other member crates were dropped with no warning: on a 24-caller function
+in a private Cargo workspace the answer listed 12.
+
+Now a position in a Rust crate is answered from the outermost Cargo
+workspace that takes the crate in: a `members` glob not undone by
+`exclude`, the crate's own `package.workspace` pointer, or a path
+dependency of the root package (the cases Cargo itself treats as members).
+A crate with its own `[workspace]` stays where it is. When the answer still
+comes from a narrower directory than an enclosing one with its own marker,
+a warning names both and the `project` to pass.
+
+TypeScript does not move. An experiment with an npm workspace of two
+packages (each with its own `tsconfig.json`, one importing the other) found
+the cross-package caller missing whether the language server started at
+the package or at the workspace root, and also with a solution-style root
+`tsconfig.json` that references both: tsserver answers call hierarchy
+within the `tsconfig.json` project that owns the file. Moving the root
+would cost a second server for nothing, so an npm, yarn or pnpm workspace
+member stays at its package and the answer says that callers in other
+packages are not listed. The earlier advice to pass `project: "."` in a
+TypeScript monorepo was wrong and is withdrawn.
+
+Candidates for reading `Cargo.toml`: `smol-toml` (BSD-3-Clause, no
+dependencies, TOML 1.1 compliant, ships types), `@iarna/toml` (ISC,
+last released in 2020) and a hand-written reader for the three tables
+used. `smol-toml` was taken: target-specific dependency tables and inline
+tables are easy to get wrong by hand. For workspace globs, Node's own
+`path.matchesGlob` (stable since 22.20, below the 22.22.2 this package
+requires) was taken over adding `picomatch`. `pnpm-workspace.yaml` is read
+with a small line reader for its `packages` list rather than adding a YAML
+parser for one key.
+
+The structured result was measured against the Markdown text on the same
+24-caller function: 7,522 bytes of JSON against 4,538 of text (1.66x);
+for `scope` 2,117 against 1,292 (1.64x). Dropping false booleans and empty
+arrays would save 9%; dropping `tests`, which repeats the callers that sit
+in test files, would save 30%. Both change the declared output schema that
+clients validate, so neither ships in a patch release; the numbers are
+recorded for a later minor version.
