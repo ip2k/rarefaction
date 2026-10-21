@@ -33,7 +33,9 @@ Claude Code ──MCP stdio──> rarefaction (this) ──LSP stdio──> sou
 - `src/graph/walk.ts` — the walk. Collapses per-call-site duplicates, counts
   SDK callees instead of listing them, caps nodes.
 - `src/tools/orient.ts` — the composer; `src/render.ts` — the Markdown the
-  model reads; `src/server.ts` — `orient` and `status`.
+  model reads; `src/server.ts` — `orient`, `scope` and `status`.
+- `src/tools/scope.ts` — `orient`'s files plus git co-change neighbours from
+  `src/graph/cochange.ts`, each with its reason; advisory.
 - `scripts/try.ts` — manual driver over real stdio: `npx tsx scripts/try.ts
   --root <project> orient '{"symbol":"…"}'`.
 

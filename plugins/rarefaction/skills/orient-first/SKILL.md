@@ -17,7 +17,11 @@ from the project's language server. Use it before opening whole files.
    lists exact positions; retry with one of them.
 3. In repositories with several languages, pass `profile` (`swift`, `rust`,
    `c`, `typescript`, `python`, `wasm`) or use a position, and `project` for a
-   nested package.
+   nested package. A position without `project` is answered from its nearest
+   project marker; in a Cargo workspace or monorepo that is one member, and
+   callers in other members are left out, so pass `project` (`"."` for the
+   whole workspace) with positions there. `project` and positions are relative
+   to the workspace root that `status` reports.
 4. Start with the default bounds. Raise `up`, `down` or `max_nodes`, or set
    `include_body: false`, only when the answer is truncated or too large.
 5. Read the warnings. A stale index, a server still indexing or a missing call

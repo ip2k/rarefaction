@@ -115,7 +115,7 @@ Swift needs macOS with Xcode (or a Swift toolchain with sourcekit-lsp).
 
 The plugin bundles the server, launched with `npx -y rarefaction-lsp-mcp`,
 and an `orient-first` skill that tells the agent to call `status` and
-`orient` before reading whole files.
+`orient` before reading whole files, and `scope` before editing.
 
 ```bash
 # Claude Code
@@ -138,9 +138,10 @@ codex mcp add rarefaction -- npx -y rarefaction-lsp-mcp
 
 Add `--env PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"` before the `--`
 if rust-analyzer or wat_server live outside the client's `PATH`. The tools
-are `status` and `orient` (in Claude Code, `mcp__rarefaction__status` and
-`mcp__rarefaction__orient`); both are read-only, so you can allow them in your
-permissions to avoid repeated prompts. For Codex, give the first index time
+are `status`, `orient` and `scope` (in Claude Code, `mcp__rarefaction__status`,
+`mcp__rarefaction__orient` and `mcp__rarefaction__scope`); all three are
+read-only, so you can allow them in your permissions to avoid repeated
+prompts. For Codex, give the first index time
 in `~/.codex/config.toml`:
 
 ```toml
@@ -183,10 +184,13 @@ The plugin's skill covers this. Without the plugin, add this to `~/.claude/CLAUD
 project instruction file:
 
 > Use rarefaction's status tool once in a new project, then orient on the
-> relevant symbol before reading whole files. In mixed repositories pass
-> profile or a workspace-relative path:line:column. Start with the default
-> graph bounds; expand only when necessary. Follow freshness and coverage
-> advice, and inspect FFI/generated bindings separately when relevant.
+> relevant symbol before reading whole files, and scope on a symbol before
+> editing it (advisory: also look outside the files it lists). In mixed
+> repositories pass profile or a workspace-relative path:line:column; in
+> workspaces with nested packages, pass project with position queries. Start
+> with the default graph bounds; expand only when necessary. Follow freshness
+> and coverage advice, and inspect FFI/generated bindings separately when
+> relevant.
 
 ### Xcode projects
 
@@ -235,9 +239,14 @@ cross-language FFI edges are not indexed as a unified graph.
 
 Optional `.rarefaction.json` in the workspace root configures each profile.
 Paths in `project`, profile `root`, and relative position queries are
-relative to that workspace. Position queries discover the nearest supported
-project marker. Bare names in mixed workspaces need `profile` or a
-configured `default_profile`:
+relative to that workspace. A position query without `project` discovers
+the nearest supported project marker. In a workspace whose members have their
+own markers (a Cargo workspace, a TypeScript monorepo with a `tsconfig.json`
+per package) that is the member, so callers in other members are left out;
+pass `project` (`"."` for the whole workspace) to keep them. A git worktree
+nested inside the workspace is reached the same way: name it in `project` and
+give positions its path as a prefix. Bare names in mixed workspaces need
+`profile` or a configured `default_profile`:
 
 ```json
 {

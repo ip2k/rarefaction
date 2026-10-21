@@ -11,7 +11,7 @@ apply to Codex.
 
 ## Codex setup
 
-The user-level `rarefaction` MCP registration launches this clone's built
+The user-level `rarefaction` MCP registration launches a built clone's
 `dist/index.js` with an absolute Node path. Leave its working directory and
 `--root` unset so it follows the Codex chat's project directory. Build after
 server changes. See README.md for registration and verification steps.
