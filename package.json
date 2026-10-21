@@ -1,6 +1,6 @@
 {
   "name": "rarefaction-lsp-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MCP server that gives AI coding agents an LSP call graph for one symbol: callers, callees, implementations, tests and impacted files in one call, instead of reading whole files.",
   "mcpName": "io.github.ip2k/rarefaction-lsp-mcp",
   "keywords": [

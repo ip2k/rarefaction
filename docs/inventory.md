@@ -19,7 +19,7 @@ project ever changes hands.
 
 | dependency | licence | commercial use | notes |
 |---|---|---|---|
-| `@modelcontextprotocol/server`, `/client` | MIT | yes | v2 |
+| `@modelcontextprotocol/server`, `/client` | Apache-2.0 (MIT before 2.3) | yes | v2.3.1 |
 | `vscode-languageserver-protocol` (+ `vscode-jsonrpc`) | MIT | yes | |
 | `zod` | MIT | yes | v4 |
 | `typescript`, `vitest`, `tsx` | MIT / Apache-2.0 | yes | dev only |

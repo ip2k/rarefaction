@@ -1,6 +1,6 @@
 {
   "name": "rarefaction",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Gives the agent an LSP call graph for one symbol before it reads files: signature, body, callers, callees, implementations, tests and impacted files in one call, to save tokens and context.",
   "author": {
     "name": "Sean (ip2k)",
