@@ -5,6 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- A position in a git worktree, submodule or other checkout nested inside
+  the workspace (a directory holding `.git`) is answered from that checkout
+  without the outer project's warning. 0.4.1 answered from the right place
+  but warned that the outer workspace did not list it and suggested
+  `project: "."`, which cannot reach files under a dot directory such as
+  `.claude/worktrees`.
+
 ## [0.4.1] - 2026-10-20
 
 ### Fixed

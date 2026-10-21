@@ -117,4 +117,23 @@ describe("workspace routing for members of a larger workspace", () => {
     // Negated in pnpm-workspace.yaml, and the root's workspaces do not reach it.
     expect((await w.route({ symbol: "apps/pnpm/pkgs/skip/src/index.ts:1:14" })).warnings).toEqual([]);
   });
+
+  it("stops at a checkout boundary, so a nested git worktree is not told to use the outer project", async () => {
+    const r = await root();
+    const ws = '[workspace]\nmembers = ["crates/*"]\n';
+    await files(r, { ".git/HEAD": "ref: refs/heads/main\n", "Cargo.toml": ws, "crates/a/Cargo.toml": crate("a"), "crates/a/src/lib.rs": "",
+      ".claude/worktrees/w/.git": "gitdir: ../../../.git/worktrees/w\n", ".claude/worktrees/w/Cargo.toml": ws,
+      ".claude/worktrees/w/crates/a/Cargo.toml": crate("a"), ".claude/worktrees/w/crates/a/src/lib.rs": "",
+      "vendor/lib/.git": "gitdir: elsewhere\n", "vendor/lib/Cargo.toml": crate("lib"), "vendor/lib/src/lib.rs": "" });
+    const w = await Workspace.load(r);
+    const worktree = await w.route({ symbol: ".claude/worktrees/w/crates/a/src/lib.rs:1:1" });
+    expect(worktree.session.rootPath).toBe(join(r, ".claude/worktrees/w"));
+    expect(worktree.warnings).toEqual([]);
+    // A nested repository (a submodule or vendored checkout) is its own project too.
+    const vendored = await w.route({ symbol: "vendor/lib/src/lib.rs:1:1" });
+    expect(vendored.session.rootPath).toBe(join(r, "vendor/lib"));
+    expect(vendored.warnings).toEqual([]);
+    // Inside the main checkout nothing changes.
+    expect((await w.route({ symbol: "crates/a/src/lib.rs:1:1" })).session.rootPath).toBe(r);
+  });
 });
